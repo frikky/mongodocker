@@ -1,1 +1,1 @@
-docker build --tag my/repo ..
+docker build --tag my/repo .
