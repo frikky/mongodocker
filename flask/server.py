@@ -2,75 +2,60 @@
 from pymongo import MongoClient
 from flask import Flask, jsonify, request
 import datetime
+from mongodb import database_handler
 
 app = Flask(__name__)
 
-class correlate_data(object):
-    def __init__(self, ip, port):
-        self.save_data()
-        self.connect_database(ip, port)
+class correlate_data(database_handler):
+	def __init__(self, ip, port):
+		self.database = database_handler(ip, port)
 
-    def connect_database(self, ip, port):
-        self.mongoclient = MongoClient('192.168.1.129', 27017)
+	# Returns error messages
+	def default_error(self, data="", path=""):
+		if not data or not path:	
+			return {'error': 'Can\'t find the information you\'re looking for'}
 
-    def save_data(self):
-        self.data = [
-        {
-            'id': '192.168.0.1',
-                'title': u'Buy groceries',
-                'description': u'Milk, Cheese, Pizza, Fruit, Tylenol', 
-                'done': False
-        },
-        {
-            'id': '192.168.0.2',
-            'title': u'Learn Python',
-            'description': u'Need to find a good Python tutorial on the web', 
-            'done': False
-        }
-        ]
+		return {'error': 'Can\'t find %s in collection %s' % (data, path)}
 
-    def default_error(self, data="", path=""):
-        if not data or not path:	
-            return {'error': 'Can\'t find the information you\'re looking for'}
+		# Do mongodb stuff
+	def get_data(self, collection, path, data):
+		data = self.database.find_object(collection, data)
 
-        return {'error': 'Can\'t find %s in %s' % (path, data)}
+		print data.count()
+		return self.default_error(path, data)
 
-    # Find the right database
-    def find_database(self, path):
-        return True
+serverip = '172.28.3.163'
+serverport = 80
+find_data = correlate_data(serverip, serverport)
 
-    # Do mongodb stuff
-    def get_data(self, path, data):
-        if not self.find_database(path):
-            return self.default_error(data, path)
-
-        # Add path check
-        for item in self.data:
-            if item["id"] == data:
-                return item
-
-        return self.default_error(data, path)
-
-#find_data = correlate_data()
 @app.errorhandler(404)
 def page_not_found(e):
-    return find_data.default_error()
+	return jsonify(find_data.default_error())
+
+@app.route('/', methods=['GET'])
+def standard():
+	return jsonify(find_data.default_error())
+
+@app.route('/', methods=['POST'])
+def add_task():
+	# Verify if the host is part of the API subscribers 
+	data = {"error": "OMG SOMETHING WENT WRONG"} ## ADD STUFF
+	return jsonify(data)
 
 @app.route('/<string:path>/<string:task>', methods=['GET'])
 def get_tasks(path, task):
-    data = find_data.get_data(path, task)
-    print request.headers["host"]
+	db = find_data.database.mongoclient
+	data = find_data.get_data(db.ip[path], path, task)
 
-    if len(task) == 0:
-        abort(404)
-    #task = [task for task in data.get_data(path, ) if task['id'] == task_id]
+	print request.headers["host"]
 
-    return jsonify(data)
+	if len(task) == 0:
+		abort(404)
+
+	return jsonify(data)
 
 
 # ip, category, timeadded, timemodified
 
 if __name__ == '__main__':
-    serverip = '172.28.3.163'
-    serverport = 80
-    app.run(debug=True)
+	app.run(debug=True)
