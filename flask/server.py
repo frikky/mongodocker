@@ -39,92 +39,112 @@ class correlate_data(database_handler):
             return {'error': 'Can\'t find %s in collection %s' % (data, path)}
 
         # Do mongodb stuff
-	def get_data(self, collection, path, data):
-            resp = ""
+	def get_data(self, ip_db, url_db, hash_db, path, data):
+		resp = ""
 
-            # Add url and ip
-            if path == "ip":
-                resp = self.database.find_ip_object(collection["ips"], data)
+		# Add url and ip
+		if path == "ip":
+			resp = self.database.find_ip_object(ip_db["ips"], data)
 
-            # Verifies after basic categories 
-            if not resp:
-                categories = self.database.get_available_category_collections()
+		# Verifies after basic categories 
+		# Can be verified here? Attempt URL, Hash and URL lookup -> Use in if
+		if not resp:
+			categories = self.database.get_available_category_collections()
 
-                # Needs reverse path check to IP, URL or HASH.
-                if path in categories:
-                    print "TESTING"
-                    return "HELLLOOOOOO"
-                    # Lookup other shit
+			# Needs reverse path check to IP, URL or HASH.
+			if path in categories:
+				category_collection = find_data.database.mongoclient["category"][path]
 
-            # Check categories here
+				# Find IP/URL etc, lookup mognodb ID, find it and return
+				# Validate if ip, url or hash with regex?
+				resp = self.database.find_ip_object(ip_db["ips"], data)
+				#category_data = self.database.find_category_object(category_collection, 
+				#def find_category_object(self, collection, id):
 
-            if resp is None or not resp:
-                return self.default_error(path, resp)
+				if resp is None:
+					return self.default_error(path, resp)
 
-            return resp 
+				for item in resp["containers"]:
+					if item["category"] == path:
+						cur_id = item["mongo_id"]	
+						break
 
-        def generate_data(self):
-            db = self.database.mongoclient.ip
-            category_db = self.database.mongoclient.category
+				# Ad failcheck here in case it doesn't exist? Should _ALWAYS_ exist if everything work.
+				resp = self.database.find_category_object(category_collection, cur_id)
 
-            ip = "192.168.0.1\n"
-            category = "c2"
-            name = "zeus"
+		# Check categories here
 
-            # Generate other data first to append to the IP-range
-            ip = ip[:-1]
-            data = self.database.add_new_ip(db, db.ips, category_db, ip, \
-                category=category, name=name)
+		if resp is None or not resp:
+			return self.default_error(path, resp)
 
-            return data
+		return resp 
+
+	def generate_data(self):
+		db = self.database.mongoclient.ip
+		category_db = self.database.mongoclient.category
+
+		ip = "192.168.0.1\n"
+		category = "c2"
+		name = "zeus"
+
+		# Generate other data first to append to the IP-range
+		ip = ip[:-1]
+		data = self.database.add_new_ip(db, db.ips, category_db, ip, \
+			category=category, name=name)
+
+		return data
 
 find_data = correlate_data(serverip, serverport)
 
 @app.errorhandler(404)
 def page_not_found(e):
-    return jsonify(find_data.default_error())
+	return jsonify(find_data.default_error())
 
 @app.route('/', methods=['GET'])
 def standard():
-    return jsonify(find_data.default_error())
+	return jsonify(find_data.default_error())
 
 @app.route('/', methods=['POST'])
 def add_task():
-    # Verify if the host is part of the API subscribers 
-    data = {"error": "OMG SOMETHING WENT WRONG"}
-    return jsonify(data)
+# Verify if the host is part of the API subscribers 
+	data = {"error": "OMG SOMETHING WENT WRONG"}
+	return jsonify(data)
 
 
 @app.route('/categories', methods=['GET'])
 def get_categories():
-    data = {"categories": []}
-    for category in find_data.database.get_available_category_collections():
-        data["categories"].append(category)
+	data = {"categories": []}
+	for category in find_data.database.get_available_category_collections():
+		data["categories"].append(category)
 
-    return jsonify(data)
+	return jsonify(data)
 
 @app.route('/<string:path>/<string:task>', methods=['GET'])
 def get_tasks(path, task):
-    find_data.generate_data()
+	find_data.generate_data()
 
-    db = find_data.database.mongoclient[path]
-    data = find_data.get_data(db, path, task)
+	#db = find_data.database.mongoclient[path]
+	ip_db = find_data.database.mongoclient.ip
+	url_db = find_data.database.mongoclient.url
+	hash_db = find_data.database.mongoclient.hash
 
-    if len(data) == 0:
-        abort(404)
+	data = find_data.get_data(ip_db, url_db, hash_db, path, task)
 
-    try:
-        tmp_ret = data
-    except TypeError:
-        return jsonify({"error": "Python fault error in jsonifying data."})
+	if len(data) == 0:
+		abort(404)
 
-    try:
-        return jsonify(tmp_ret)
-    except ValueError:
-        return jsonify({"error": "%s is not a valid path." % path}) 
+	try:
+		tmp_ret = data
+	except TypeError:
+		return jsonify({"error": "Python fault error in jsonifying data."})
+
+	try:
+		return jsonify(tmp_ret)
+	except ValueError:
+		return jsonify({"error": "%s is not a valid path." % path}) 
 
 if __name__ == '__main__':
-    try:
-        app.run(debug=True, threaded=True, port=int(argv[1]))
-    except IndexError:
-        app.run(debug=True, threaded=True)
+	try:
+		app.run(debug=True, threaded=True, port=int(argv[1]))
+	except IndexError:
+		app.run(debug=True, threaded=True, port=80)
