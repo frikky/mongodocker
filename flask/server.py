@@ -119,9 +119,16 @@ def get_categories():
 
 	return jsonify(data)
 
+### FIX
+# Used for debug purposes
+@app.route('/clear', methods=['GET'])
+def clear_data():
+	find_data.database.clear_all_databases()
+	return jsonify({"Status": "Database cleared."})
+
 @app.route('/<string:path>/<string:task>', methods=['GET'])
 def get_tasks(path, task):
-	find_data.generate_data()
+	#find_data.generate_data()
 
 	#db = find_data.database.mongoclient[path]
 	ip_db = find_data.database.mongoclient.ip
