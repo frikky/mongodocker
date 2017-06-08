@@ -157,7 +157,7 @@ class database_handler(object):
 		#testdata = self.generate_test_data()
 		testdata = self.generate_test_data()
 		category = "c2"
-		name = "zeus"
+		name = "zeus2"
 
 		#self.clear_collection(db.ips)
 
