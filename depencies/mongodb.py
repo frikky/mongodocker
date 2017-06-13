@@ -81,7 +81,9 @@ class database_handler(object):
             return return_id
 
     # Adds data to a specific dataset. 
-    def add_data(self, database, ip_collection, category_db, ip, category="", name=""):
+    ## FIX - ADD URL instead of hardcoded IP
+    # Can get type from collection.
+    def add_data(self, database, type_collection, category_db, type, item, category="", name=""):
         object_exists = False
 
         # Creates category data.
@@ -89,16 +91,23 @@ class database_handler(object):
         cur_time = datetime.datetime.now()
 
         if category and name:
-            category_id = self.add_new_category_data(category_db, category, name, cur_time, ip=ip) 
+            if type == "ip":
+                category_id = self.add_new_category_data(category_db, \
+                    category, name, cur_time, ip=item) 
+            elif type == "url":
+                category_id = self.add_new_category_data(category_db, \
+                    category, name, cur_time, url=item) 
+            elif type == "hash": 
+                category_id = self.add_new_category_data(category_db, \
+                    category, name, cur_time, filehash=item) 
 
         ## FIX
         # ADD URL AND HASH
         # Item already exists.
-        if ip_collection.find({"ip": ip}).count() > 0:
-            tmp_data = ip_collection.find_one({"ip": ip})
+        if type_collection.find({type: item}).count() > 0:
+            tmp_data = type_collection.find_one({type: item})
             # Verify data in containers
 
-            # Might be slow!
             category_exists = False
             for item in tmp_data["containers"]:
                 if item["name"] == name and item["category"] == category:
@@ -110,25 +119,31 @@ class database_handler(object):
                 tmp_data["containers"].append({"name": name, \
                     "category": category, "mongo_id": category_id, "addeddate": cur_time})
                 tmp_data["modifieddate"] = cur_time
-                ip_collection.save(tmp_data)
+                type_collection.save(tmp_data)
 
         # Return otherwise - might want to modify date of category if category/name exists?
 
         else:
             # Base information to add to a colleciton
             tmp_data = {
-                "ip": "%s" % ip,
+                type: "%s" % item,
                 "containers": [],
                 "addeddate": "%s" % cur_time,
                 "modifieddate": "%s" % cur_time
             }
 
+            # DNS stuff
+            if type == "url":
+                tmp_data["ip"] = [] 
+
+        
         if category_id:
             tmp_data["containers"].append({"name": name, \
                 "category": category, "mongo_id": category_id, "addeddate": cur_time})
 
+        # Verifies duplicates, so I don't actually have to.
         try:
-            return ip_collection.insert_one(tmp_data).inserted_id
+            return type_collection.insert_one(tmp_data).inserted_id
         except errors.DuplicateKeyError:
             return False
 
@@ -144,12 +159,12 @@ class database_handler(object):
         return False
 
     # Finds a single p in a collection - make generic
-    def find_object(self, collection, name):
+    def find_object(self, collection, type, name):
         ## FIX - Might break because of first part of list. Need all of them concated.
         if not name:
             return [x for x in collection.find({})]
 
-        return collection.find_one({"ip": name})
+        return collection.find_one({type: name})
 
     # Made to test lists - Needs to contain category and stuff
     def get_data(self):
@@ -173,7 +188,6 @@ if __name__ == "__main__":
             client.clear_all_databases()
             exit()
     except IndexError:
-        client.test_func()
+        print "Did you mean to use the argument \"clear\" or run handle_data.py?"
         exit()
-
-    client.test_func()
+    

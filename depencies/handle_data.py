@@ -20,15 +20,20 @@ class correlate_data(database_handler):
     # IP/URL/HASH > 
     def get_data(self, ip_db, url_db, hash_db, path, data):
         resp = ""
+        cur_db = ""
 
         # Add url and ip
         ### FIX
         if path == "ip":
-            resp = self.database.find_object(ip_db["ip"], data)
+            cur_db = ip_db["ip"]
         elif path == "url":
-            resp = self.database.find_object(url_db["url"], data)
+            cur_db = url_db["url"]
         elif path == "hash":
-            resp = self.database.find_object(hash_db["hash"], data)
+            cur_db = hash_db["hash"]
+
+        if cur_db:
+            resp = self.database.find_object(cur_db, path, data)
+            print resp
 
         # Verifies after basic categories 
         # Can be verified here? Attempt URL, Hash and URL lookup -> Use in if
@@ -40,18 +45,18 @@ class correlate_data(database_handler):
             self.database.mongoclient["category"][path], data)
 
         categories = self.database.get_available_category_collections()
+
         # Needs reverse path check to IP, URL or HASH.
         if path in categories and not resp:
             category_collection = self.database.mongoclient["category"][path]
 
             # Matches category
-            resp = self.database.find_object(self.database.mongoclient["category"][path], data)
+            resp = self.database.find_object(self.database.mongoclient["category"][path], path, data)
 
             # Find IP/URL etc, lookup mognodb ID, find it and return
             # Validate if ip, url or hash with regex?
-
             if not resp:
-                resp = self.database.find_object(ip_db["ips"], data)
+                resp = self.database.find_object(cur_db, data)
 
             if resp is None:
                 return self.default_error(path, resp)
@@ -70,6 +75,7 @@ class correlate_data(database_handler):
     # Return filelocation
     def download_file(self, category, name, type, download_location):
         filename = "%s_%s_%s" % (category, name, type)
+        print "Downloading %s" % download_location
          
         r = requests.get(download_location, stream=True)
         with open(filename, 'wb') as tmp:
@@ -107,18 +113,24 @@ class correlate_data(database_handler):
     # Adds a list of x to the correct db
     def add_data_to_db(self, data, type, category, name):
         # Uhm what
-        db = self.database.mongoclient.ip
+        if type == "ip":
+            db = self.database.mongoclient.ip
+        elif type == "url":
+            db = self.database.mongoclient.url
+        elif type == "hash":
+            db = self.database.mongoclient.hash
+
         category_db = self.database.mongoclient.category
     
         cnt = 0
         for item in data:
-            if self.database.add_data(db, db[type], category_db, item, category=category, name=name):
+            if self.database.add_data(db, db[type], category_db, type, item, category=category, name=name):
                 cnt += 1
 
         if cnt:
-            print "Added %d items to db." % cnt
+            print "Added %d items to %s db." % (cnt, type)
         else:
-            print "Added nothing to db."
+            print "Added nothing to db %s db." % type
                 
 
     # Reads config and downloads stuff
@@ -151,8 +163,9 @@ class correlate_data(database_handler):
 if __name__ == "__main__": 
     find_data = correlate_data("127.0.0.1", 27017)
     
+    # Tests a single
     #find_data.add_data_to_db(["192.168.0.1"], "ip", "phish", "phishtank")
-    #hello = find_data.database.return_collection(find_data.database.mongoclient.ip.ip)
+    #hello = find_data.database.return_collection(find_data.database.mongoclient.url.url)
 
     # Generates all of config file
     find_data.read_config()

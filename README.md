@@ -24,20 +24,19 @@ There are currently three ways that all work well:
 All of these will clear the entire database. 
 
 # Done from todo
-* Add logic for IP
-* Make search work better (faster)
+* Add logic for IP, URL and HASH 
 * Make proper category lookup work. 
+* Make search work more dynamic (Can continue this)
+* Make config file work properly.
 
 # Todo? 
-* Add logic for URL and HASH (Dupe IP for now)
-* Apparently I some stuff was killed in the process of creating new ones. ITS A FEATURE
 * Add logging
 * Make it able to automatically add data to the DB. On demand load or timebased? - Starting with on demand - Almost done - needs to use a refreshtime or similar.
 * Add extensions management and script management for parsing of external sources. Most likely their own config files.
 * Better iterator to see if items already exist. Loop before > while. Will need to remake some functions.
 
 *** When above is done
-* Filter what data to return.
+* Filter what data to return (json > bson).
 * Add docker configuration for the flask server, and remove for mongodb. Only used now for fast cleanups.
 * Start using API tokens both in the database and the flask server. Not a rush as it's ran locally per now. 
 * Try hosted solution - Proper HTTPS config and MongoDB security
