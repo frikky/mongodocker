@@ -1,5 +1,5 @@
 # MongoDB docker
-MongoDB and rest API to use as threat intel for different SI(E)Ms. Addon for QRadar is available in Intelligencefeed. Needs implementation with mongoDB thoo
+MongoDB and rest API to use as threat intel for different SI(E)Ms. Addon for QRadar is available in Intelligencefeed. It's basically a proper database compared to the PoC in the Intelligencefeed github repo.
 
 # Current usage
 1. Install Docker.
@@ -9,18 +9,30 @@ MongoDB and rest API to use as threat intel for different SI(E)Ms. Addon for QRa
 5. Run python server.py 
 6. Go to localhost:5000
 
-# Todo? 
-* Add logic option for json or raw format (not xml :)). Depends whats the best.
-* Add logic for URLs and hashes. 
-* Make proper category lookup work. 
-* Add extensions management and script management for parsing of external sources.
-* Add docker configuration for the flask server, and remove for mongodb. Only used now for fast cleanups.
-* Make it able to automatically add data to the DB. On demand load or timebased?
+# Config
+This is where the data is handled. Will add more data soon
 
-*** When above is done - Create 
+# Data storing
+For now, while testing, all the data collected from connfig/config.json is stored in tmp\_data.
+
+# Done from todo
+* Add logic for IP, URLs and hashes. 
+* Make search work-ish
+* Make proper category lookup work. 
+
+# Todo? 
+* Make it able to automatically add data to the DB. On demand load or timebased? - Starting with on demand
+* Add extensions management and script management for parsing of external sources.
+* Better iterator to see if items already exist. Loop before > while. Will need to remake some functions.
+
+*** When above is done
+* Filter what data to return.
+* Add docker configuration for the flask server, and remove for mongodb. Only used now for fast cleanups.
 * Start using API tokens both in the database and the flask server. Not a rush as it's ran locally per now. 
-* Go away localhost :^)
-* More config ability \o/
+* Try hosted solution - Proper HTTPS config and MongoDB security
+* A plain search site (GUI) 
+* More config-possibilites \o/
+* Finish up readme and stuff
 
 # Logic
 |client| -> webserver API -> mongoDB -> webserver -> |client|
@@ -53,6 +65,3 @@ data={"name": "zeus", "category": "c2", "ip": \<ip\>}
 
 Data will then be added to \<ip\> and the c2 database under name zeus.
 Not sure about response yet.
-
-# Configs
-The data will have to have two seperate collections. One cleaned and updated every day, and one with continuous updates. Also, see usage.

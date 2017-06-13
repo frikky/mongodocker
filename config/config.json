@@ -1,41 +1,11 @@
 [
 	{
-		"name": "phishtank",
-		"base_url": "http://data.phishtank.com/",
-		"category": "phishing",
-		"path": "data/online-valid.json.gz",
-		"filename": "verified_online.json.gz",
-		"refreshtime": 43200,
-		"items": ["url"],
-		"filters": "phishtank.py"
-	},
-	{
-		"name": "torstatus",
-		"base_url": "https://torstatus.blutmagie.de/",
-		"category": "tor",
-		"path": "ip_list_exit.php/Tor_ip_list_EXIT.csv",
-		"filename": "Tor_ip_list_EXIT.csv",
-		"refreshtime": 43200,
-		"items": ["ip"]
-	},
-	{
-		"name": "bambenek",
-		"base_url": "http://osint.bambenekconsulting.com",
-		"category": "c2",
-		"path": "/feeds/c2-ipmasterlist-high.txt",
-		"filename": "c2-ipmasterlist-high.txt",
-		"refreshtime": 43200,
-		"items": ["ip"],
-		"filters": "bambenek.py"
-	},
-	{
 		"name": "zeus",
-		"base_url": "https://zeustracker.abuse.ch",
-		"category": "cnc",
-		"path": "/blocklist.php?download=ipblocklist",
+		"base_url": "https://zeustracker.abuse.ch/blocklist.php?download=ipblocklist",
+		"category": "c2",
 		"filename": "blocklist.php?download=ipblocklist",
 		"refreshtime": 43200,
-		"items": ["ip"],
+		"type": "ip",
 		"filters": "zeus.py"
 	}
 ]
