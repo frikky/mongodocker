@@ -1,11 +1,20 @@
 [
 	{
-		"name": "zeus",
+	"name": "zeus",
 		"base_url": "https://zeustracker.abuse.ch/blocklist.php?download=ipblocklist",
 		"category": "c2",
-		"filename": "blocklist.php?download=ipblocklist",
-		"refreshtime": 43200,
-		"type": "ip",
-		"filters": "zeus.py"
+		"type": "ip"
+	},
+	{
+		"name": "zeus",
+		"base_url": "https://zeustracker.abuse.ch/blocklist.php?download=domainblocklist",
+		"category": "c2",
+		"type": "url"
+	},
+	{
+		"name": "torstatus",
+		"base_url": "https://torstatus.blutmagie.de/ip_list_exit.php/Tor_ip_list_EXIT.csv",
+		"category": "tor",
+		"type": "ip"
 	}
 ]

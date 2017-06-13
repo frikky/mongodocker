@@ -1,7 +1,7 @@
-from pymongo import MongoClient
 import json
 import datetime
 import sys
+from pymongo import MongoClient, errors
 
 # Class implemented to do mongodb-related functions
 # Still contains useless functions that will be removed
@@ -9,11 +9,10 @@ class database_handler(object):
     # Initialization of database connection
     def __init__(self, ip, port):
         self.mongoclient = MongoClient(ip, port)
-
         self.category_db = self.mongoclient.category
 
     # Returns all data in a collection 
-    def print_data(self, collection):
+    def return_collection(self, collection):
         return [items for items in collection.find({})]
 
     # Clears an entire collection and prints the ammount of objects removed
@@ -81,7 +80,7 @@ class database_handler(object):
             return_id = collection.insert_one(category_data).inserted_id
             return return_id
 
-    # Adds data to a specific dataset. Should be made generic to contain other sources like URL and filehash
+    # Adds data to a specific dataset. 
     def add_data(self, database, ip_collection, category_db, ip, category="", name=""):
         object_exists = False
 
@@ -92,7 +91,8 @@ class database_handler(object):
         if category and name:
             category_id = self.add_new_category_data(category_db, category, name, cur_time, ip=ip) 
 
-
+        ## FIX
+        # ADD URL AND HASH
         # Item already exists.
         if ip_collection.find({"ip": ip}).count() > 0:
             tmp_data = ip_collection.find_one({"ip": ip})
@@ -127,7 +127,10 @@ class database_handler(object):
             tmp_data["containers"].append({"name": name, \
                 "category": category, "mongo_id": category_id, "addeddate": cur_time})
 
-        return ip_collection.insert_one(tmp_data).inserted_id
+        try:
+            return ip_collection.insert_one(tmp_data).inserted_id
+        except errors.DuplicateKeyError:
+            return False
 
     def find_category_object(self, collection, id):
         data = collection.find_one({"_id": id})
@@ -154,24 +157,11 @@ class database_handler(object):
 
     # Clears the available databases 
     def clear_all_databases(self):
-        print "Here?"
         data = self.mongoclient.database_names()
         for items in data:
             self.mongoclient.drop_database(self.mongoclient[items])	
             print "Dropped %s" % items
 
-    # Test function to test mongodb connection functionality	
-    def test_func(self):
-        db = self.mongoclient.ip
-        category_db = self.mongoclient.category
-
-        testdata = self.generate_test_data()
-        category = "c2"
-        name = "zeus2"
-
-        data = self.add_data(db, db.ips, category_db, "192.168.0.1", \
-            category=category, name=name)
-    
 if __name__ == "__main__":
     mongodbserver = '127.0.0.1'
     mongodbport = 27017

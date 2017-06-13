@@ -33,6 +33,7 @@ def jsonify(*args, **kwargs):
 def page_not_found(e):
     return jsonify(find_data.default_error())
 
+# Default :)
 @app.route('/', methods=['GET'])
 def standard():
     return jsonify(find_data.default_error())
@@ -44,6 +45,7 @@ def add_task():
 
     return jsonify(data)
 
+# Lists all available categories
 @app.route('/categories', methods=['GET'])
 def get_categories():
     data = {"categories": []}
@@ -67,6 +69,7 @@ def generate_data():
 @app.route('/<string:path>/<string:task>', methods=['GET'])
 def get_tasks(path, task):
 
+    # This shit is stupid.
     ip_db = find_data.database.mongoclient.ip
     url_db = find_data.database.mongoclient.url
     hash_db = find_data.database.mongoclient.hash

@@ -1,5 +1,5 @@
 # MongoDB docker
-MongoDB and rest API to use as threat intel for different SI(E)Ms. Addon for QRadar is available in Intelligencefeed. It's basically a proper database compared to the PoC in the Intelligencefeed github repo.
+MongoDB and REST API to use as a Threat Intel framework for different SI(E)Ms. Addon for QRadar is available in Intelligencefeed. It's basically an attempt at a proper implementation compared to the in Intelligencefeed github repo.
 
 # Current usage
 1. Install Docker.
@@ -10,19 +10,30 @@ MongoDB and rest API to use as threat intel for different SI(E)Ms. Addon for QRa
 6. Go to localhost:5000
 
 # Config
-This is where the data is handled. Will add more data soon
+This is where the data is handled. Will add more data soon, and do some test runs of different categories etc. before locking it down. Run handle\_data.py to regenerate data from config file.
 
 # Data storing
-For now, while testing, all the data collected from connfig/config.json is stored in tmp\_data.
+For now, while testing, all the data collected from config/config.json is stored in tmp\_data.
+
+# Clearing the DB
+There are currently three ways that all work well:
+1. Restart docker container (It's not gonna run in docker soonish)
+2. Run "python mongodb.py clear"
+3. Start the webserver and go to localhost/clear
+
+All of these will clear the entire database. 
 
 # Done from todo
-* Add logic for IP, URLs and hashes. 
-* Make search work-ish
+* Add logic for IP
+* Make search work better (faster)
 * Make proper category lookup work. 
 
 # Todo? 
-* Make it able to automatically add data to the DB. On demand load or timebased? - Starting with on demand
-* Add extensions management and script management for parsing of external sources.
+* Add logic for URL and HASH (Dupe IP for now)
+* Apparently I some stuff was killed in the process of creating new ones. ITS A FEATURE
+* Add logging
+* Make it able to automatically add data to the DB. On demand load or timebased? - Starting with on demand - Almost done - needs to use a refreshtime or similar.
+* Add extensions management and script management for parsing of external sources. Most likely their own config files.
 * Better iterator to see if items already exist. Loop before > while. Will need to remake some functions.
 
 *** When above is done

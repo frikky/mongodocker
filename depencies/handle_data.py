@@ -16,25 +16,30 @@ class correlate_data(database_handler):
 
         return {'error': 'Can\'t find %s in collection %s' % (data, path)}
 
-    # Do mongodb stuff
+    # Do mongodb searches and stuff. 
+    # IP/URL/HASH > 
     def get_data(self, ip_db, url_db, hash_db, path, data):
         resp = ""
 
         # Add url and ip
+        ### FIX
         if path == "ip":
-            resp = self.database.find_object(ip_db["ips"], data)
+            resp = self.database.find_object(ip_db["ip"], data)
+        elif path == "url":
+            resp = self.database.find_object(url_db["url"], data)
+        elif path == "hash":
+            resp = self.database.find_object(hash_db["hash"], data)
 
         # Verifies after basic categories 
         # Can be verified here? Attempt URL, Hash and URL lookup -> Use in if
         if resp:
             return resp
 
-        categories = self.database.get_available_category_collections()
-
         # Check if name in category exists > IP exists.
         resp = self.database.find_category_data(\
-        self.database.mongoclient["category"][path], data)
+            self.database.mongoclient["category"][path], data)
 
+        categories = self.database.get_available_category_collections()
         # Needs reverse path check to IP, URL or HASH.
         if path in categories and not resp:
             category_collection = self.database.mongoclient["category"][path]
@@ -63,8 +68,8 @@ class correlate_data(database_handler):
         return resp 
 
     # Return filelocation
-    def download_file(self, category, name, download_location):
-        filename = "%s_%s" % (category, name)
+    def download_file(self, category, name, type, download_location):
+        filename = "%s_%s_%s" % (category, name, type)
          
         r = requests.get(download_location, stream=True)
         with open(filename, 'wb') as tmp:
@@ -90,31 +95,35 @@ class correlate_data(database_handler):
         return True
 
     # Hardcoded for IPs in Zeus
-    ###### FIX!!!
-    def format_data(self, filepath):
-        with open(filepath, "r") as tmp:
-            cur_data = [x[:-1] for x in tmp.readlines() if x and not x.startswith("#") and len(x) > 1]
+    ###### FIX!!! - Might make it a standard.
+    def format_data(self, filepath, filter=""):
+        if not filter:
+            with open(filepath, "r") as tmp:
+                cur_data = [x[:-1] for x in tmp.readlines() if x and \
+                    not x.startswith("#") and len(x) > 1]
 
         return cur_data
 
-    """
+    # Adds a list of x to the correct db
     def add_data_to_db(self, data, type, category, name):
-        # Uhm where 
-        self.database.add_data(
+        # Uhm what
+        db = self.database.mongoclient.ip
+        category_db = self.database.mongoclient.category
+    
+        cnt = 0
+        for item in data:
+            if self.database.add_data(db, db[type], category_db, item, category=category, name=name):
+                cnt += 1
 
-    #def add_data(self, database, ip_collection, category_db, ip, category="", name=""):
+        if cnt:
+            print "Added %d items to db." % cnt
+        else:
+            print "Added nothing to db."
+                
 
-    #def add_data(self, database, ip_collection, category_db, ip, category="", name=""):
-
-        self.add_new_data(
-        self.database.add_new_ip(
-    """
-
-        
     # Reads config and downloads stuff
     # Maybe try not working with files at all, use direct request feedback?
     def read_config(self):
-
         # FIX -- Remove ..
         cwd = os.getcwd()
         config = "%s/../config/config.json" % cwd
@@ -122,51 +131,28 @@ class correlate_data(database_handler):
 
         json_data = json.load(open(config, 'r'))
         
-        intelnames = [item["name"] for item in json_data]
-        intelcategories = [item["category"] for item in json_data]
-
         # Should use full paths.
         # Maybe try not working with files at all, use direct request feedback?
-        # Uncomment :D
 
+        # Lmao, this is garbage
         for item in json_data:
-            #IF ITEM DOESNT EXIST, DO:
-            if not os.path.isfile("%s/%s" % (tmp_location, item["filename"])):
-                #file = self.download_file(item["category"], \
-                    #item["name"], item["base_url"])
-                #data = self.move_file("%s_%s" % (item["category"], \
-                    #item["name"]), item["category"], tmp_location)
-                formatted_data = self.format_data("%s/%s/%s" % (tmp_location, item["category"], \
-                    ("%s_%s" % (item["category"], item["name"]))))
-                #self.add_data_to_db(formatted_data, item["type"], item["category"], item["name"])
+            if not os.path.isfile("%s/%s/%s" % (tmp_location, item["category"], \
+                "%s_%s_%s" % (item["category"], item["name"], item["type"]))):
 
-                # Format data? 
-                #Check database first?
+                file = self.download_file(item["category"], \
+                    item["name"], item["type"], item["base_url"])
+                data = self.move_file("%s_%s_%s" % (item["category"], \
+                    item["name"], item["type"]), item["category"], tmp_location)
 
-            exit()
-        # Remove file?
-              
-        print intelnames 
-        
+            formatted_data = self.format_data("%s/%s/%s" % (tmp_location, item["category"], \
+                ("%s_%s_%s" % (item["category"], item["name"], item["type"]))))
+            self.add_data_to_db(formatted_data, item["type"], item["category"], item["name"])
 
-    def generate_data(self):
-        self.read_config()
-        return False
-        # Read data from config
-        db = self.database.mongoclient.ip
-        category_db = self.database.mongoclient.category
-
-        ip = "192.168.0.1\n"
-        category = "c2"
-        name = "zeus"
-
-        # Generate other data first to append to the IP-range
-        ip = ip[:-1]
-        data = self.database.add_data(db, db.ips, category_db, ip, \
-                category=category, name=name)
-
-        return data
-
-if __name__ == "__main__":
+if __name__ == "__main__": 
     find_data = correlate_data("127.0.0.1", 27017)
+    
+    #find_data.add_data_to_db(["192.168.0.1"], "ip", "phish", "phishtank")
+    #hello = find_data.database.return_collection(find_data.database.mongoclient.ip.ip)
+
+    # Generates all of config file
     find_data.read_config()
