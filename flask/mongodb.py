@@ -133,9 +133,20 @@ class database_handler(object):
 		data = collection.find_one({"_id": id})
 		return data
 
+        def find_category_data(self, collection, name):
+            for item in collection.find({}):
+                if item["name"] == name:
+                    return item
+
+            return False
+
 	# Finds a single p in a collection - make generic
-	def find_ip_object(self, collection, ip):
-            return collection.find_one({"ip": ip})
+	def find_object(self, collection, name):
+            ## FIX - Might break because of first part of list. Need all of them concated.
+            if not name:
+                return [x for x in collection.find({})]
+
+            return collection.find_one({"ip": name})
 
 	# Made to test listsa - Needs to contain category and stuff
 	def get_data(self):
@@ -146,6 +157,7 @@ class database_handler(object):
 		ip = "192.168.0."
 		for i in range(0, 254):
 			ips.append(ip+str(i))
+                        break
 
 		return ips
 

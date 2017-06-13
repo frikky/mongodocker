@@ -44,35 +44,43 @@ class correlate_data(database_handler):
 
 		# Add url and ip
 		if path == "ip":
-			resp = self.database.find_ip_object(ip_db["ips"], data)
+			resp = self.database.find_object(ip_db["ips"], data)
 
 		# Verifies after basic categories 
 		# Can be verified here? Attempt URL, Hash and URL lookup -> Use in if
 		if not resp:
 			categories = self.database.get_available_category_collections()
+                        
+                        # Check if name in category exists > IP exists.
+                        resp = self.database.find_category_data(\
+                            find_data.database.mongoclient["category"][path], data)
+
 
 			# Needs reverse path check to IP, URL or HASH.
-			if path in categories:
+			if path in categories and not resp:
 				category_collection = find_data.database.mongoclient["category"][path]
+
+                                # Matches category
+				resp = self.database.find_object(find_data.database.mongoclient["category"][path], data)
 
 				# Find IP/URL etc, lookup mognodb ID, find it and return
 				# Validate if ip, url or hash with regex?
-				resp = self.database.find_ip_object(ip_db["ips"], data)
-				#category_data = self.database.find_category_object(category_collection, 
-				#def find_category_object(self, collection, id):
+
+                                ### Finds IP
+                                if not resp:
+                                    resp = self.database.find_object(ip_db["ips"], data)
 
 				if resp is None:
 					return self.default_error(path, resp)
 
-				for item in resp["containers"]:
-					if item["category"] == path:
-						cur_id = item["mongo_id"]	
-						break
+                                if isinstance(resp, dict):
+                                    for item in resp["containers"]:
+                                            if item["category"] == path:
+                                                    cur_id = item["mongo_id"]	
+                                                    break
 
-				# Ad failcheck here in case it doesn't exist? Should _ALWAYS_ exist if everything work.
-				resp = self.database.find_category_object(category_collection, cur_id)
-
-		# Check categories here
+                                    # Ad failcheck here in case it doesn't exist? Should _ALWAYS_ exist if everything work.
+                                    #resp = self.database.find_category_object(category_collection, cur_id)
 
 		if resp is None or not resp:
 			return self.default_error(path, resp)
@@ -140,15 +148,23 @@ def get_tasks(path, task):
 	if len(data) == 0:
 		abort(404)
 
+        # LOGIC PLS
 	try:
 		tmp_ret = data
 	except TypeError:
 		return jsonify({"error": "Python fault error in jsonifying data."})
 
 	try:
-		return jsonify(tmp_ret)
+                #print data
+		return jsonify(result=tmp_ret)
 	except ValueError:
 		return jsonify({"error": "%s is not a valid path." % path}) 
+
+        # Jsonify list?
+
+@app.route('/<string:path>', methods=['GET'])
+def get_category(path): 
+    return get_tasks(path, "")
 
 if __name__ == '__main__':
 	try:
