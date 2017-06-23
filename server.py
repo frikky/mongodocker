@@ -4,13 +4,14 @@ import json
 import datetime
 from sys import argv
 from werkzeug import Response
-from bson import ObjectId, json_util
+from bson.objectid import ObjectId 
+from bson import json_util
 from flask import Flask, request, abort
 
 from depencies.handle_data import correlate_data
 
 app = Flask(__name__)
-serverip = '127.0.0.1'
+serverip = '0.0.0.0'
 serverport = 27017
 find_data = correlate_data(serverip, serverport)
 
@@ -91,6 +92,6 @@ def get_category(path):
 
 if __name__ == '__main__':
     try:
-        app.run(debug=True, threaded=True, port=int(argv[1]))
+        app.run(debug=True, threaded=True, host="0.0.0.0", port=int(argv[1]))
     except IndexError:
-        app.run(debug=True, threaded=True, port=80)
+        app.run(debug=True, threaded=True, host="0.0.0.0", port=80)
