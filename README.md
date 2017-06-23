@@ -6,8 +6,8 @@ MongoDB and REST API to use as a Threat Intel framework for different SI(E)Ms. A
 2. Run the mongodb\_scripts/build.sh file.
 3. Run the mongodb\_scripts/run.sh file.
 4. Change IP in flask/server.py to point to host running docker instance (top). Default to localhost.
-5. Run python server.py 
-6. Go to localhost:5000
+5. Run python server.py (Via docker or not) 
+6. Go to localhost:80
 
 # Config
 This is where the data is handled. Will add more data soon, and do some test runs of different categories etc. before locking it down. Run handle\_data.py to regenerate data from config file.

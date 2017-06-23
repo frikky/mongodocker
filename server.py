@@ -62,6 +62,8 @@ def clear_data():
     find_data.database.clear_all_databases()
     return jsonify({"Status": "Database cleared."})
 
+### FIX 
+# Used for testing purposes
 @app.route('/generate', methods=['GET'])
 def generate_data():
     find_data.generate_data()
