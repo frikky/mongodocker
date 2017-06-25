@@ -114,8 +114,9 @@ class correlate_data(database_handler):
     def verify_ip(self, type, data):
         if type == "ip":
             pattern = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
+        # Only allows sha256 for now.
         elif type == "hash":
-            pattern = "([a-fA-F\d]{32})"
+            pattern = "([A-Fa-f0-9]{64})"
 
         pattern = re.compile(pattern)
 
@@ -143,7 +144,10 @@ class correlate_data(database_handler):
             {"error": "Category %s doesn't exist and is therefore not permitted." % category}
             return False
 
-        # Add url and hash check
+        # Verify if format is a known one for data here. FIX
+        # e.g. virustotal format for hashes. 
+
+        # Add url
         verification = self.verify_ip(type, data)
         if not verification:
             return False
@@ -160,7 +164,7 @@ class correlate_data(database_handler):
 
         # Data (hash, ip, url), category, name
         # Disallow creation of new categories
-        #print data, category, name
+        # print data, category, name
 
     # Adds a list of x to the correct db FIX
     # Add kwargs to be able to add url and stuff as well. Comment maybe?

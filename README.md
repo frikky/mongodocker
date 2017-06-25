@@ -29,11 +29,17 @@ All of these will clear the entire database.
 * Make search work more dynamic (Can continue this)
 * Make config file work properly.
 
+# Adding data
+Currently there are plans for two different ways of adding data:
+* config file  	- cronjob for calling depencies/handle\_data.read\_config
+* external 		- posting to localhost/80 using a specific call. Supports bulk but not kwargs yet.
+* manual		- Using the function depencies/handle\_data.add\_data\_to\_db
+
 # Todo? 
 * Add logging
 * Make it able to automatically add data to the DB. On demand load or timebased? - Starting with on demand - Almost done - needs to use a refreshtime or similar.
 * Add extensions management and script management for parsing of external sources. Most likely their own config files.
-* Better iterator to see if items already exist. Loop before > while. Will need to remake some functions.
+* Better iterator to see if items already exist. Loop before > while. Will need to remake some functions. Might not be necessary as mongodb already checks.
 
 *** When above is done
 * Filter what data to return (json > bson).
