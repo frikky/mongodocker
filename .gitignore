@@ -1,1 +1,5 @@
 tmp_data/*
+depencies/config.py
+depencies/*.pyc
+*.swp
+*.swo

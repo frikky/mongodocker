@@ -1,4 +1,5 @@
 import os 
+import re
 import json
 import requests
 from pymongo import MongoClient
@@ -33,7 +34,6 @@ class correlate_data(database_handler):
 
         if cur_db:
             resp = self.database.find_object(cur_db, path, data)
-            print resp
 
         # Verifies after basic categories 
         # Can be verified here? Attempt URL, Hash and URL lookup -> Use in if
@@ -110,7 +110,60 @@ class correlate_data(database_handler):
 
         return cur_data
 
-    # Adds a list of x to the correct db
+    # Check if list or single IP :) - FIX, dont have to load regex on every request
+    def verify_ip(self, type, data):
+        if type == "ip":
+            pattern = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
+        elif type == "hash":
+            pattern = "([a-fA-F\d]{32})"
+
+        pattern = re.compile(pattern)
+
+        if isinstance(data, list):
+            ip_list = []
+            for item in data:
+                if pattern.match(item) is not None:
+                    ip_list.append(item)
+
+            # Return here
+            return ip_list
+
+        if pattern.match(data) is not None:
+            return data 
+
+        return False
+
+    def verify_post_data(self, type, data, category, name):
+        # Raw or NA? If implemented in config? 
+
+        # FIX
+        # Make category global to reduce load for every request
+        all_categories = [item for item in self.database.get_available_category_collections()]
+        if category.lower() not in all_categories:
+            {"error": "Category %s doesn't exist and is therefore not permitted." % category}
+            return False
+
+        # Add url and hash check
+        verification = self.verify_ip(type, data)
+        if not verification:
+            return False
+
+        # Add data after all checks have been done
+        if isinstance(verification, list):
+            for item in verification:
+                self.add_data_to_db(item, type, category, name)
+            return {"result": "%d %ss added to the db." % (len(verification), type)}
+        else:
+            self.add_data_to_db(item, type, category, name)
+            return {"result": "1 %s added to the db." % type}
+
+
+        # Data (hash, ip, url), category, name
+        # Disallow creation of new categories
+        #print data, category, name
+
+    # Adds a list of x to the correct db FIX
+    # Add kwargs to be able to add url and stuff as well. Comment maybe?
     def add_data_to_db(self, data, type, category, name):
         # Uhm what
         if type == "ip":
@@ -122,25 +175,32 @@ class correlate_data(database_handler):
 
         category_db = self.database.mongoclient.category
     
-        cnt = 0
-        for item in data:
-            if self.database.add_data(db, db[type], category_db, type, item, category=category, name=name):
-                cnt += 1
+        if isinstance(data, list):
+            cnt = 0
+            for item in data:
+                if self.database.add_data(db, db[type], category_db, \
+                    type, item, category=category, name=name):
+                    cnt += 1
 
-        if cnt:
-            print "Added %d items to %s db." % (cnt, type)
+            ## FIX
+            if cnt:
+                print "Added %d items to %s db." % (cnt, type)
+            else:
+                print "Added nothing to db %s db." % type
         else:
-            print "Added nothing to db %s db." % type
-                
+            self.database.add_data(db, db[type], category_db, type, data, \
+                category=category, name=name)
 
     # Reads config and downloads stuff
     # Maybe try not working with files at all, use direct request feedback?
     def read_config(self):
         # FIX -- Remove ..
         cwd = os.getcwd()
-        config = "%s/../config/config.json" % cwd
-        tmp_location = "%s/../tmp_data" % cwd
+        config = "%s/config/config.json" % cwd
 
+        # FIX
+        # Make it only run in memory, no local save.
+        tmp_location = "%s/tmp_data" % cwd
         json_data = json.load(open(config, 'r'))
         
         # Should use full paths.

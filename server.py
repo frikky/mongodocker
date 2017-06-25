@@ -1,4 +1,4 @@
-#!flask/bin/python
+#!/bin/python
 
 import json
 import datetime
@@ -14,6 +14,9 @@ app = Flask(__name__)
 serverip = '0.0.0.0'
 serverport = 27017
 find_data = correlate_data(serverip, serverport)
+
+## FIX
+API_KEY = "TESTING"
 
 # BSON to JSON parser
 class JSONEncoder(json.JSONEncoder):
@@ -42,8 +45,32 @@ def standard():
 # Verify if the host is part of the API subscribers 
 @app.route('/', methods=['POST'])
 def add_task():
-    data = {"error": "OMG SOMETHING WENT WRONG"}
+    try:
+        # Too cluttered, move to handle_data.py -- FIX
+        if request.headers["TOKEN"] == API_KEY:
+            try:
+                data = json.loads(request.data)
+            except ValueError:
+                return jsonify({"error": "Invalid request."})
+                
+            accepted_types = ["ip", "url", "hash"]
+            if data["type"] in accepted_types:
+                ret = find_data.verify_post_data(data["type"], \
+                    data["data"], data["category"], data["name"])
 
+                # Should always return valid data?
+                try:
+                    return jsonify(ret)
+                except (ValueError, TypeError):
+                    pass
+
+            # FIX - Better error messages.
+            return jsonify({"error": "Invalid request."})
+            # Verify request now
+    except KeyError:
+        pass
+
+    data = {"error": "Missing or wrong API key. Header: TOKEN"}
     return jsonify(data)
 
 # Lists all available categories
@@ -66,8 +93,8 @@ def clear_data():
 # Used for testing purposes
 @app.route('/generate', methods=['GET'])
 def generate_data():
-    find_data.generate_data()
-    return jsonify({"Status": "Generated data."})
+    find_data.read_config()
+    return jsonify({"Status": "Generated data. Check /categories"})
 
 @app.route('/<string:path>/<string:task>', methods=['GET'])
 def get_tasks(path, task):
