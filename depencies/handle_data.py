@@ -196,9 +196,9 @@ class correlate_data(database_handler):
 
             ## FIX
             if cnt:
-                print "Added %d items to %s db." % (cnt, type)
+                print "Added %d items to %s db with category %s." % (cnt, type, category)
             else:
-                print "Added nothing to db %s db." % type
+                print "Added nothing to db %s db with category %s." % (type, category)
         else:
             self.database.add_data(db, db[type], category_db, type, data, \
                 category=category, name=name)
@@ -218,7 +218,7 @@ class correlate_data(database_handler):
         # Should use full paths.
         # Maybe try not working with files at all, use direct request feedback?
 
-        # Lmao, this is garbage
+        # Lmao, this is garbage - Add timestamp checks
         for item in json_data:
             if not os.path.isfile("%s/%s/%s" % (tmp_location, item["category"], \
                 "%s_%s_%s" % (item["category"], item["name"], item["type"]))):

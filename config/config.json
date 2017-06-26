@@ -18,12 +18,6 @@
 		"type": "ip"
 	},
 	{
-		"name": "adserver",
-		"base_url": "https://pgl.yoyo.org/adservers/serverlist.php?hostformat=;showintro=0",
-		"category": "ads",
-		"type": "url"
-	},
-	{
 		"name": "malwaredomains",
 		"base_url": "http://mirror1.malwaredomains.com/files/justdomains",
 		"category": "malware", 

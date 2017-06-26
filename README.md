@@ -39,14 +39,15 @@ Currently there are plans for three different ways of adding data:
 * A plain search site (GUI) 
 
 # Todo? 
+* Fix bottleneck for adding large amounts of data. 
 * Add logging
 * Add extensions management and script management for parsing of external sources. Most likely their own config files.
-* Better iterator to see if items already exist. Loop before > while. Will need to remake some functions. Might not be necessary as mongodb already checks.
+* Better iterator to see if items already exist. Loop before > while. Will need to remake some functions. Might not be necessary as mongodb already checks. Same as first part of todo.
 
 *** When above is done
 * Filter what data to return (json > bson). (No object IDs)
-* Start using API tokens both in the database and the flask server. Not a rush as it's ran locally per now. (Done a stupid attempt with flask that's insecure :))))
-* Try hosted solution - Proper config webserver and mongoDB setup required. 
+* Start using API tokens both in the database and the flask server. Not a rush as it's ran locally per now. (Done a stupid attempt with flask that doesn't work :)))))))
+* Try hosted solution - Proper config webserver and mongoDB setup required. See Security below.
 * More config-possibilites \o/ - More than the adding data chapter shows.
 * Finish up readme and stuff
 
