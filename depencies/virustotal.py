@@ -26,7 +26,7 @@ class virustotal(object):
         params=params, headers=headers)
 
         if response.status_code == 200:
-            self.injest(data=response.json())
+            return response.json()
         
         return False 
 
@@ -51,3 +51,4 @@ class virustotal(object):
 if __name__ == "__main__":
     vt = virustotal(sys.argv[1])
     data = vt.check_vt()
+    vt.injest(data=data)

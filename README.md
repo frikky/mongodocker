@@ -51,9 +51,9 @@ Currently there are plans for three different ways of adding data:
 * Finish up readme and stuff
 
 # Security
-Set HTTP(S) header
-Setup API authentication (flask)
-Block port 27017 (iptables)
+Set HTTP(S) header 				 - refer to owasp
+Setup API authentication (flask) - Not sure how to implement it yet. Most likely static config file.
+Open specific ports in firewall. - IPTables config
 
 # Logic
 |client| -> webserver API -> mongoDB -> webserver -> |client|

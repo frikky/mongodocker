@@ -10,6 +10,7 @@ from bson import json_util
 from flask import Flask, request, abort, render_template, redirect
 
 from depencies.handle_data import correlate_data
+from depencies.virustotal import virustotal
 
 app = Flask(__name__)
 serverip = '0.0.0.0'
@@ -56,18 +57,60 @@ def standard():
         return str(e)
 
 # Handles in browser search
-@app.route('/search', methods=['POST'])
+@app.route('/search', methods=['POST', 'GET'])
 def search():
     data = request.form["search"]
-    request.title = data
-    return get_tasks(find_data.regex_check(data), data)
+        
+    # FIX error code and else statement
+    if not data or data == "\n" or data is None:
+        code = 301
+        if request.headers["Referer"] in request.url:
+            return redirect(request.headers["Referer"], code=code)
+        else:
+            return redirect("http://localhost", code=code)
+
+    type = find_data.regex_check(data)
+    return_data = get_tasks(type, data)
+    verification = verify_error(return_data.data)
+
+    # FIX - Add error message to template (jinja)
+    # FIX - Blank search
+    if verification:
+        return return_data 
+
+    # FIX - ADD ip and URL OSint \o/
+    # FIX virustotal - hash shouldn't be in object creation
+    if type == "hash":
+        # Adds data before redirecting if file exists
+        vt = virustotal(data)
+        vt_data = vt.check_vt()
+        vt.injest(data=vt_data) # Also adds to the DB :)
+        try:
+            if vt_data["positives"] > 0:
+                return redirect("https://virustotal.com/en/file/%s/analysis" % data.lower(), code=301)
+        except KeyError:
+            pass
+
+    return render_template("index.html", code=404)
+
+def verify_error(data):
+    try:
+        json.loads(data)["result"]["error"]
+    except KeyError:
+        return data
+
+    return False
 
 # Handles manual search
-"""
 @app.route('/search/<string:data>', methods=['GET'])
 def search_manual(data):
-    return get_tasks(find_data.regex_check(data), data)
-"""
+    return_data = get_tasks(find_data.regex_check(data), data)
+
+    if verify_error(return_data.data):
+        return return_data 
+
+    return render_template("index.html", code=404)
+
 
 # Verify if the host is part of the API subscribers 
 @app.route('/', methods=['POST'])
@@ -111,10 +154,12 @@ def get_categories():
 
 ### FIX
 # Used for debug purposes
+"""
 @app.route('/clear', methods=['GET'])
 def clear_data():
     find_data.database.clear_all_databases()
     return jsonify({"Status": "Database cleared."})
+"""
 
 ### FIX 
 # Used for testing purposes
@@ -125,6 +170,11 @@ def generate_data():
 
 @app.route('/<string:path>/<string:task>', methods=['GET'])
 def get_tasks(path, task):
+    # ffs bootstrap
+    if path == "fonts":
+        return ""
+    
+    find_data.regex_check(task)
 
     # This shit is stupid.
     ip_db = find_data.database.mongoclient.ip
@@ -144,7 +194,8 @@ def get_tasks(path, task):
 
 @app.route('/<string:path>', methods=['GET'])
 def get_category(path): 
-    return get_tasks(path, "")
+    data = get_tasks(path, "")
+    return data
 
 # FIX - HTTPS redirect
 """
@@ -159,13 +210,11 @@ def before_request():
 # FIX - verify headers
 @app.after_request
 def apply_caching(response):
-    """
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Strict-Transport-Security"] = "max-age=31536000 ; includeSubDomains"
-    """
     response.headers["Server"] = ":)"
 
     return response

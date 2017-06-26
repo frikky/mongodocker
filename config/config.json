@@ -1,6 +1,6 @@
 [
 	{
-	"name": "zeus",
+		"name": "zeus",
 		"base_url": "https://zeustracker.abuse.ch/blocklist.php?download=ipblocklist",
 		"category": "c2",
 		"type": "ip"
@@ -16,5 +16,47 @@
 		"base_url": "https://torstatus.blutmagie.de/ip_list_exit.php/Tor_ip_list_EXIT.csv",
 		"category": "tor",
 		"type": "ip"
+	},
+	{
+		"name": "adserver",
+		"base_url": "https://pgl.yoyo.org/adservers/serverlist.php?hostformat=;showintro=0",
+		"category": "ads",
+		"type": "url"
+	},
+	{
+		"name": "malwaredomains",
+		"base_url": "http://mirror1.malwaredomains.com/files/justdomains",
+		"category": "malware", 
+		"type": "url"
+	},
+	{
+		"name": "sansdomainlow",
+		"base_url": "https://isc.sans.edu/feeds/suspiciousdomains_Low.txt",
+		"category": "malware",
+		"type": "url"
+	},
+	{
+		"name": "sansdomainmedium",
+		"base_url": "https://isc.sans.edu/feeds/suspiciousdomains_Medium.txt",
+		"category": "malware",
+		"type": "url"
+	},
+	{
+		"name": "sansdomainhigh",
+		"base_url": "https://isc.sans.edu/feeds/suspiciousdomains_High.txt",
+		"category": "malware",
+		"type": "url"
+	}, 
+	{
+		"name": "cybercrimetracker",
+		"base_url": "http://cybercrime-tracker.net/all.php",
+		"category": "malware",
+		"type": "url"
+	},
+	{
+		"name": "cybercrimetracker",
+		"base_url": "http://cybercrime-tracker.net/all.php",
+		"category": "malware",
+		"type": "url"
 	}
 ]

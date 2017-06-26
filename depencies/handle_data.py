@@ -22,6 +22,7 @@ class correlate_data(database_handler):
     def get_data(self, ip_db, url_db, hash_db, path, data):
         resp = ""
         cur_db = ""
+        #21BCD352F2B4D47C0C2A4FE640FCD9D551A039279E17F210E652D775A7525928
 
         # Add url and ip
         ### FIX
@@ -40,6 +41,7 @@ class correlate_data(database_handler):
         if resp:
             return resp
 
+
         # Check if name in category exists > IP exists.
         resp = self.database.find_category_data(\
             self.database.mongoclient["category"][path], data)
@@ -55,8 +57,12 @@ class correlate_data(database_handler):
 
             # Find IP/URL etc, lookup mognodb ID, find it and return
             # Validate if ip, url or hash with regex?
+            # Most likely something wrong. Try /malware/asdasd
             if not resp:
-                resp = self.database.find_object(cur_db, data)
+                try:
+                    resp = self.database.find_object(cur_db, path, data)
+                except AttributeError:
+                    pass
 
             if resp is None:
                 return self.default_error(path, resp)
@@ -67,6 +73,8 @@ class correlate_data(database_handler):
                         cur_id = item["mongo_id"]	
                         break
 
+        # ADD SHIT HERE
+    
         if resp is None or not resp:
             return self.default_error(path, resp)
 
@@ -77,7 +85,7 @@ class correlate_data(database_handler):
         filename = "%s_%s_%s" % (category, name, type)
         print "Downloading %s" % download_location
          
-        r = requests.get(download_location, stream=True)
+        r = requests.get(download_location, stream=True, timeout=10)
         with open(filename, 'wb') as tmp:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:
@@ -229,6 +237,8 @@ class correlate_data(database_handler):
         if re.match('^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', data):
             return "ip"
         elif re.match('^([A-Fa-f0-9]{64})', data):
+            return "hash"
+        elif re.match('^([a-f0-9]{32})', data):
             return "hash"
         elif re.match('[^@]+@[^@]+\.[^@]+', data):
             return "mail"
