@@ -2,11 +2,12 @@
 
 import json
 import datetime
+import os
 from sys import argv
 from werkzeug import Response
 from bson.objectid import ObjectId 
 from bson import json_util
-from flask import Flask, request, abort, render_template
+from flask import Flask, request, abort, render_template, redirect
 
 from depencies.handle_data import correlate_data
 
@@ -14,6 +15,9 @@ app = Flask(__name__)
 serverip = '0.0.0.0'
 serverport = 27017
 find_data = correlate_data(serverip, serverport)
+
+if not os.path.isdir("tmp_data/"):
+    os.mkdir("tmp_data")
 
 ## FIX
 API_KEY = "TESTING"
@@ -28,6 +32,7 @@ class JSONEncoder(json.JSONEncoder):
 
         return json.JSONEncoder.default(self, obj)
 
+
 # Rewriting flasks jsonify function with the above class in mind
 def jsonify(*args, **kwargs):
     return Response(json.dumps(dict(*args, **kwargs), cls=JSONEncoder), \
@@ -35,7 +40,7 @@ def jsonify(*args, **kwargs):
 
 @app.errorhandler(404)
 def page_not_found(e):
-    return jsonify(find_data.default_error())
+    return render_template("index.html", title="hi")
 
 @app.errorhandler(400)
 def page_not_found(e):
@@ -50,17 +55,19 @@ def standard():
     except Exception, e:
         return str(e)
 
-# FIX - Currently only IP
 # Handles in browser search
 @app.route('/search', methods=['POST'])
 def search():
     data = request.form["search"]
+    request.title = data
     return get_tasks(find_data.regex_check(data), data)
 
 # Handles manual search
+"""
 @app.route('/search/<string:data>', methods=['GET'])
 def search_manual(data):
     return get_tasks(find_data.regex_check(data), data)
+"""
 
 # Verify if the host is part of the API subscribers 
 @app.route('/', methods=['POST'])
@@ -138,6 +145,30 @@ def get_tasks(path, task):
 @app.route('/<string:path>', methods=['GET'])
 def get_category(path): 
     return get_tasks(path, "")
+
+# FIX - HTTPS redirect
+"""
+@app.before_request
+def before_request():
+    if request.url.startswith('http://'):
+        url = request.url.replace('http://', 'https://', 1)
+        code = 301
+        return redirect(url, code=code)
+"""
+
+# FIX - verify headers
+@app.after_request
+def apply_caching(response):
+    """
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000 ; includeSubDomains"
+    """
+    response.headers["Server"] = ":)"
+
+    return response
 
 if __name__ == '__main__':
     try:

@@ -50,6 +50,11 @@ Currently there are plans for three different ways of adding data:
 * More config-possibilites \o/ - More than the adding data chapter shows.
 * Finish up readme and stuff
 
+# Security
+Set HTTP(S) header
+Setup API authentication (flask)
+Block port 27017 (iptables)
+
 # Logic
 |client| -> webserver API -> mongoDB -> webserver -> |client|
 

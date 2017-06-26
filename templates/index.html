@@ -1,42 +1,50 @@
 <!DOCTYPE HTML>
 <html>
-
 <head>
-<title> WOO </title>
+<title> SOMETHING </title>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <link rel="stylesheet" media="screen" href = "{{ url_for('static', filename='bootstrap.min.css') }}">
 <meta name="viewport" content = "width=device-width, initial-scale=1.0">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/canvasjs/1.7.0/jquery.canvasjs.min.js"></script>
-</head>
 <body class = "body">
 <nav class="navbar navbar-default" role="navigation">
   <div class="container-fluid">
-    <!-- Brand and toggle get grouped for better mobile display -->
     <div class="navbar-header">
       <a class="navbar-brand" href="/">Brand</a>
     </div>
 
-    <!-- Collect the nav links, forms, and other content for toggling -->
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <ul class="nav navbar-nav">
-        <li class="active"><a href="https://github.com/frikky/mongodocker">API</a></li>
+        <li class="active"><a href="https://github.com/frikky/mongodocker">Sourcecode</a></li>
         </li>
       </ul>
       <ul class="nav navbar-nav">
         <li class="active"><a href="/categories">Categories</a></li>
         </li>
       </ul>
+      <ul class="nav navbar-nav">
+        <li class="active"><a href="/generate">Generate testdata</a></li>
+        </li>
+      </ul>
+      <ul class="nav navbar-nav">
+        <li class="active"><a href="/clear">Clear database</a></li>
+        </li>
+      </ul>
     </div>
   </div>
 </nav>
+</head>
 
 <div class="text-center">
-	<img src="https://img.purch.com/h/1000/aHR0cDovL3d3dy5saXZlc2NpZW5jZS5jb20vaW1hZ2VzL2kvMDAwLzA0OC84NTAvb3JpZ2luYWwvY2FweWJhcmEtMDIuanBn" style="width:30%; heigth:30%">
+	<img src="https://img.purch.com/h/1000/aHR0cDovL3d3dy5saXZlc2NpZW5jZS5jb20vaW1hZ2VzL2kvMDAwLzA0OC84NTAvb3JpZ2luYWwvY2FweWJhcmEtMDIuanBn" style="width:30%; heigth:30%"/>
+	<div id="input-group col-md-12">
 	  <form class="navbar-form navbar-center" method="post" action="{{ url_for('search') }}">
-			<input type="text" name="search" placeholder="Search for ip, url, hash...">
-			<button type="submit" class="btn btn-default">Submit</button>
-	  </form>
+			<input type="text" name="search" class="search-query form-control" placeholder="Search for ip, url, hash...">
+			<button type="submit" class="btn btn-info">
+				<span class="glyphicon glyphicon-search"></span>
+			</button>
+		</form>
 </div>
 </body>
 </html>
