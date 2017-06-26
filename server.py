@@ -6,7 +6,7 @@ from sys import argv
 from werkzeug import Response
 from bson.objectid import ObjectId 
 from bson import json_util
-from flask import Flask, request, abort
+from flask import Flask, request, abort, render_template
 
 from depencies.handle_data import correlate_data
 
@@ -37,10 +37,30 @@ def jsonify(*args, **kwargs):
 def page_not_found(e):
     return jsonify(find_data.default_error())
 
+@app.errorhandler(400)
+def page_not_found(e):
+    return jsonify({"error": "Invalid data requested."})
+
 # Default :)
 @app.route('/', methods=['GET'])
 def standard():
-    return jsonify(find_data.default_error())
+    paragraph=["PARAGRAPH"]
+    try:
+        return render_template("index.html", title="hi", paragraph=paragraph)
+    except Exception, e:
+        return str(e)
+
+# FIX - Currently only IP
+# Handles in browser search
+@app.route('/search', methods=['POST'])
+def search():
+    data = request.form["search"]
+    return get_tasks(find_data.regex_check(data), data)
+
+# Handles manual search
+@app.route('/search/<string:data>', methods=['GET'])
+def search_manual(data):
+    return get_tasks(find_data.regex_check(data), data)
 
 # Verify if the host is part of the API subscribers 
 @app.route('/', methods=['POST'])

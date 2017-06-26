@@ -224,6 +224,17 @@ class correlate_data(database_handler):
                 ("%s_%s_%s" % (item["category"], item["name"], item["type"]))))
             self.add_data_to_db(formatted_data, item["type"], item["category"], item["name"])
 
+    # Checks what the regex matches
+    def regex_check(self, data):
+        if re.match('^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', data):
+            return "ip"
+        elif re.match('^([A-Fa-f0-9]{64})', data):
+            return "hash"
+        elif re.match('[^@]+@[^@]+\.[^@]+', data):
+            return "mail"
+        else:
+            return "url"
+
 if __name__ == "__main__": 
     find_data = correlate_data("127.0.0.1", 27017)
     

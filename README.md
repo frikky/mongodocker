@@ -36,6 +36,7 @@ Currently there are plans for three different ways of adding data:
 * Make config file work properly.
 * Make it able to automatically add data to the DB. POST requests implemented (see above). Missing Docker implementation
 * Add docker configuration for the flask server, and remove for mongodb. Only used now for fast cleanups.
+* A plain search site (GUI) 
 
 # Todo? 
 * Add logging
@@ -46,8 +47,7 @@ Currently there are plans for three different ways of adding data:
 * Filter what data to return (json > bson). (No object IDs)
 * Start using API tokens both in the database and the flask server. Not a rush as it's ran locally per now. (Done a stupid attempt with flask that's insecure :))))
 * Try hosted solution - Proper config webserver and mongoDB setup required. 
-* A plain search site (GUI) 
-* More config-possibilites \o/ - E.g. 
+* More config-possibilites \o/ - More than the adding data chapter shows.
 * Finish up readme and stuff
 
 # Logic
@@ -58,7 +58,6 @@ e.g. IP 192.168.0.1 is categorized as a bot C&C:
 
 https://127.0.0.1:5000/ip/192.168.0.1
 
-'''json
         {
             "ip": "192.168.1.0",
             "id": "some_id",
@@ -70,7 +69,6 @@ https://127.0.0.1:5000/ip/192.168.0.1
             "addeddate": datetime.datetime.utcnow(),
             "modifieddate": datetime.datetime.utcnow()
         }
-'''
 
 *** The above can also be done towards e.g. c2/ip or phishing/ip, depending what collections exist.
 
