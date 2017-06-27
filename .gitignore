@@ -1,5 +1,10 @@
 tmp_data/*
 depencies/config.py
-depencies/*.pyc
+*.pyc
 *.swp
 *.swo
+config/key.pem
+config/cert.pem
+config/__init__.py
+config/ssl_config.py
+config/old/

@@ -1,8 +1,9 @@
 #!/bin/python
 
 import json
-import datetime
+import ssl
 import os
+import datetime
 from sys import argv
 from werkzeug import Response
 from bson.objectid import ObjectId 
@@ -11,17 +12,18 @@ from flask import Flask, request, abort, render_template, redirect
 
 from depencies.handle_data import correlate_data
 from depencies.virustotal import virustotal
+import config.ssl_config as sslconf
 
 app = Flask(__name__)
-serverip = '0.0.0.0'
+serverip = 'localhost'
 serverport = 27017
 find_data = correlate_data(serverip, serverport)
 
 if not os.path.isdir("tmp_data/"):
     os.mkdir("tmp_data")
 
-## FIX
-API_KEY = "TESTING"
+# FIX - Top kek
+API_KEY = sslconf.API_KEY
 
 # BSON to JSON parser
 class JSONEncoder(json.JSONEncoder):
@@ -64,9 +66,12 @@ def search():
     # FIX error code and else statement
     if not data or data == "\n" or data is None:
         code = 301
-        if request.headers["Referer"] in request.url:
-            return redirect(request.headers["Referer"], code=code)
-        else:
+        try:
+            if request.headers["Referer"] in request.url:
+                return redirect(request.headers["Referer"], code=code)
+            else:
+                return redirect("http://localhost", code=code)
+        except KeyError:
             return redirect("http://localhost", code=code)
 
     type = find_data.regex_check(data)
@@ -163,10 +168,12 @@ def clear_data():
 
 ### FIX 
 # Used for testing purposes
+"""
 @app.route('/generate', methods=['GET'])
 def generate_data():
     find_data.read_config()
     return jsonify({"Status": "Generated data. Check /categories"})
+"""
 
 @app.route('/<string:path>/<string:task>', methods=['GET'])
 def get_tasks(path, task):
@@ -215,12 +222,21 @@ def apply_caching(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Strict-Transport-Security"] = "max-age=31536000 ; includeSubDomains"
-    response.headers["Server"] = ":)"
+
+    # Overwrites the default response. Can't simply delete it apparently.
+    #response.headers["Server"] = ":)"
 
     return response
 
 if __name__ == '__main__':
+    debug = True
     try:
-        app.run(debug=True, threaded=True, host="0.0.0.0", port=int(argv[1]))
+        if not int(argv[1]) == 443:
+            debug = False
+            app.run(debug=debug, threaded=True, host="192.168.1.132", port=int(argv[1]))
+        else:
+            context = (sslconf.crt, sslconf.key)
+            debug = False
+            app.run(debug=debug, ssl_context=context, threaded=True, host="192.168.1.132", port=int(argv[1]))
     except IndexError:
-        app.run(debug=True, threaded=True, host="0.0.0.0", port=80)
+        app.run(debug=debug, threaded=True, host="192.168.1.132", port=80)
