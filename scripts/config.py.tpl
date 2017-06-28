@@ -1,7 +1,9 @@
 # Config file for addons if API calls are required etc.
 
-target="http://localhost"
-local_api_token="TESTING"
+# IP Target
+target=""
+# Post request API key
+API_KEY=""
 
 virustotal=""
 consumer_key=""

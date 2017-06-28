@@ -25,7 +25,7 @@ class StreamListener(tweepy.StreamListener):
             return True
 
         request_data={"type": "ip", "data": "%s" % data, "category": "malware", "name": "scan"}
-        resp = requests.post("%s/" % cfg.target, headers={"TOKEN": cfg.local_api_token}, \
+        resp = requests.post("%s/" % cfg.target, headers={"auth": cfg.API_KEY}, \
             json=request_data, verify=False)
 
         return True

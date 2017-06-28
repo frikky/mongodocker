@@ -79,9 +79,10 @@ https://127.0.0.1:5000/ip/192.168.0.1
 *** The above can also be done towards e.g. c2/ip or phishing/ip, depending what collections exist.
 
 [POST]:
-Add an IP (192.168.0.1 here) to the bot C&C db
-https://127.0.0.1:5000/ip/192.168.0.1
+Add an IP (192.168.0.1 here) to the bot C&C db<br>
+https://127.0.0.1:5000/ip/192.168.0.1<br>
 
+* Token defined in config/config.py
 headers={"auth": "TOKENHERE"}<br>
 data={"name": "zeus", "category": "c2", "type": "ip", "data": \<ip\>}<br>
 

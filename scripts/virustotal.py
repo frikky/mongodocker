@@ -4,8 +4,6 @@ import json
 import requests
 import config as cfg
 
-from handle_data import correlate_data
-
 class virustotal(object):
     def __init__(self, hash):
         self.vttoken = cfg.virustotal 
@@ -43,10 +41,9 @@ class virustotal(object):
 
         # Direct or via post requests? Idk.
         if positives > 0:
-            class_handler = correlate_data("0.0.0.0", 27017)
-            class_handler.add_data_to_db(self.hash, "hash", "malware", "virustotal")
-
-        # Convert to sha256 in case of md5
+            request_data={"type": "hash", "data": data, "category": "malware", "name": "virustotal"}
+            resp = requests.post("%s/" % cfg.target, headers={"auth": cfg.API_KEY}, \
+                json=request_data, verify=False)
 
 if __name__ == "__main__":
     vt = virustotal(sys.argv[1])

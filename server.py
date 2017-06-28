@@ -11,8 +11,8 @@ from bson import json_util
 from flask import Flask, request, abort, render_template, redirect
 
 from depencies.handle_data import correlate_data
-from depencies.virustotal import virustotal
-import config.ssl_config as sslconf
+from scripts.virustotal import virustotal
+import config.config as conf
 
 app = Flask(__name__)
 serverip = 'localhost'
@@ -23,7 +23,7 @@ if not os.path.isdir("tmp_data/"):
     os.mkdir("tmp_data")
 
 # FIX - Top kek
-API_KEY = sslconf.API_KEY
+API_KEY = conf.API_KEY
 
 # BSON to JSON parser
 class JSONEncoder(json.JSONEncoder):
@@ -122,7 +122,7 @@ def search_manual(data):
 def add_task():
     try:
         # Too cluttered, move to handle_data.py -- FIX
-        if request.headers["TOKEN"] == API_KEY:
+        if request.headers["auth"] == API_KEY:
             try:
                 data = json.loads(request.data)
             except ValueError:
@@ -142,10 +142,13 @@ def add_task():
             # FIX - Better error messages.
             return jsonify({"error": "Invalid request."})
             # Verify request now
+        else:
+            data = {"error": "Wrong API key."}
     except KeyError:
+        data = {"error": "Missing API key. Header: \"TOKEN\""}
         pass
 
-    data = {"error": "Missing or wrong API key. Header: TOKEN"}
+    #data = {"error": "Missing or wrong API key. Header: TOKEN"}
     return jsonify(data)
 
 # Lists all available categories
@@ -235,7 +238,7 @@ if __name__ == '__main__':
             debug = False
             app.run(debug=debug, threaded=True, host="192.168.1.132", port=int(argv[1]))
         else:
-            context = (sslconf.crt, sslconf.key)
+            context = (conf.crt, conf.key)
             debug = False
             app.run(debug=debug, ssl_context=context, threaded=True, host="192.168.1.132", port=int(argv[1]))
     except IndexError:
