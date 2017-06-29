@@ -23,21 +23,16 @@
         <li class="active"><a href="/categories">Categories</a></li>
         </li>
       </ul>
-	  <!--
-      <ul class="nav navbar-nav">
-        <li class="active"><a href="/generate">Generate testdata</a></li>
-        </li>
-      </ul>
-	  --!>
     </div>
   </div>
 </nav>
 </head>
 
-<div class="text-center">
+<body>
+<!-- set positive --!>
+	<div class="text-center">
 	<img src="https://img.purch.com/h/1000/aHR0cDovL3d3dy5saXZlc2NpZW5jZS5jb20vaW1hZ2VzL2kvMDAwLzA0OC84NTAvb3JpZ2luYWwvY2FweWJhcmEtMDIuanBn" style="width:30%; heigth:30%"/>
 	<div class="form-group">
-	<div id="input-group col-md-12">
 	  <form class="navbar-form navbar-center" method="post" action="{{ url_for('search') }}">
 			<input type="text" name="search" class="search-query form-control" placeholder="Search for ip, url, hash...">
 			<button type="submit" class="btn btn-info">
@@ -45,6 +40,8 @@
 			</button>
 		</form>
 	</div>
+  </div>
 </div>
+
 </body>
 </html>
