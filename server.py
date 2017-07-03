@@ -236,10 +236,10 @@ if __name__ == '__main__':
     try:
         if not int(argv[1]) == 443:
             debug = False
-            app.run(debug=debug, threaded=True, host="192.168.1.132", port=int(argv[1]))
+            app.run(debug=debug, threaded=True, host="localhost", port=int(argv[1]))
         else:
             context = (conf.crt, conf.key)
             debug = False
-            app.run(debug=debug, ssl_context=context, threaded=True, host="192.168.1.132", port=int(argv[1]))
+            app.run(debug=debug, ssl_context=context, threaded=True, host="localhost", port=int(argv[1]))
     except IndexError:
-        app.run(debug=debug, threaded=True, host="192.168.1.132", port=80)
+        app.run(debug=debug, threaded=True, host="localhost", port=80)

@@ -6,6 +6,8 @@
 
 tmp_data/*
 
+depencies/config.py
+
 config/key.pem
 config/cert.pem
 config/__init__.py
