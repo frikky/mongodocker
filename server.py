@@ -41,15 +41,17 @@ def jsonify(*args, **kwargs):
     return Response(json.dumps(dict(*args, **kwargs), cls=JSONEncoder), \
         mimetype='application/json')
 
+# Basic error handler for 404's
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template("index.html", title="hi")
 
+# Basic errorhandler for 400's
 @app.errorhandler(400)
 def page_not_found(e):
     return jsonify({"error": "Invalid data requested."})
 
-# Default :)
+# Default route
 @app.route('/', methods=['GET'])
 def standard():
     paragraph=["PARAGRAPH"]
@@ -58,8 +60,8 @@ def standard():
     except Exception, e:
         return str(e)
 
-# Handles in browser search
-@app.route('/search', methods=['POST', 'GET'])
+# Handles post request searches
+@app.route('/search', methods=['POST'])
 def search():
     data = request.form["search"]
         
@@ -74,10 +76,11 @@ def search():
         except KeyError:
             return redirect("http://localhost", code=code)
 
-    type = find_data.regex_check(data)
-    return_data = get_tasks(type, data)
+    regex_type = find_data.regex_check(data)
+    return_data = get_tasks(regex_type, data)
     verification = verify_error(return_data.data)
 
+    # Should all this be moved to handle_data?
     # FIX - Add error message to template (jinja)
     # FIX - Blank search
     if verification:
@@ -85,7 +88,7 @@ def search():
 
     # FIX - ADD ip and URL OSint \o/
     # FIX virustotal - hash shouldn't be in object creation
-    if type == "hash":
+    if regex_type == "hash":
         # Adds data before redirecting if file exists
         vt = virustotal(data)
         vt_data = vt.check_vt()
@@ -171,12 +174,10 @@ def clear_data():
 
 ### FIX 
 # Used for testing purposes
-"""
 @app.route('/generate', methods=['GET'])
 def generate_data():
     find_data.read_config()
     return jsonify({"Status": "Generated data. Check /categories"})
-"""
 
 @app.route('/<string:path>/<string:task>', methods=['GET'])
 def get_tasks(path, task):
@@ -226,7 +227,8 @@ def apply_caching(response):
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Strict-Transport-Security"] = "max-age=31536000 ; includeSubDomains"
 
-    # Overwrites the default response. Can't simply delete it apparently.
+    # Overwrites the default response. Can't simply delete it apparently. 
+    # Overwrite werkzeug request handler, not Flask
     #response.headers["Server"] = ":)"
 
     return response

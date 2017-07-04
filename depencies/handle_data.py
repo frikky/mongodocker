@@ -85,7 +85,12 @@ class correlate_data(database_handler):
         filename = "%s_%s_%s" % (category, name, type)
         print "Downloading %s" % download_location
          
-        r = requests.get(download_location, stream=True, timeout=10)
+        # In case of no internet or stuff
+        try:
+            r = requests.get(download_location, stream=True, timeout=10)
+        except (requests.exceptions.SSLError, requests.exceptions.ReadTimeout):
+            return False
+
         with open(filename, 'wb') as tmp:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:
@@ -100,16 +105,18 @@ class correlate_data(database_handler):
     # Can deduce category from filename
     # Moves file to appropriate location
     def move_file(self, filename, category, location):
+        renamefile = "%s/%s/%s" % (location, category, filename)
         try:
-            os.rename(filename, "%s/%s/%s" % (location, category, filename))
+            os.rename(filename, renamefile)
         except OSError:
             self.create_folder("%s/%s" % (location, category))
-            os.rename(filename, "%s/%s/%s" % (location, category, filename))
+            os.rename(filename, renamefile)
 
         return True
 
     # Hardcoded for IPs in Zeus
     ###### FIX!!! - Might make it a standard.
+    # Can use the Golang script for the parsing here.
     def format_data(self, filepath, filter=""):
         if not filter:
             with open(filepath, "r") as tmp:
@@ -175,9 +182,13 @@ class correlate_data(database_handler):
         # print data, category, name
 
     # Adds a list of x to the correct db FIX
+    # FIX -- Support kwargs or skip this step entirely
+    def add_data_to_db_new(self, data, data_type, category, name):
+        db = self.database.mongoclient[data_type] 
+        self.database.add_data_new(db, data_type, data, category, name)
+
     # Add kwargs to be able to add url and stuff as well. Comment maybe?
     def add_data_to_db(self, data, type, category, name):
-        # Uhm what
         if type == "ip":
             db = self.database.mongoclient.ip
         elif type == "url":
@@ -203,8 +214,49 @@ class correlate_data(database_handler):
             self.database.add_data(db, db[type], category_db, type, data, \
                 category=category, name=name)
 
+    def read_config_new(self):
+        # FIX -- Remove ..
+        cwd = os.getcwd()
+        config = "%s/config/config.json" % cwd
+
+        try:
+            json_data = json.load(open(config, 'r'))
+        except IOError:
+            config = "%s/../config/config.json" % cwd  
+            json_data = json.load(open(config, 'r'))
+
+        # Check for timestamp in json
+        # Write timestamp download timestamp back to config file
+        # Format data the right way (make new format_data)
+        # Push to add_data_to_db_new (or skip this step and straight to add data
+        
+        for item in json_data:
+            check_file = "%s/%s/%s" % (tmp_location, item["category"], \
+                    "%s_%s_%s" % (item["category"], item["name"], item["type"]))
+
+            data = self.download_file(item["category"], \
+                item["name"], item["type"], item["base_url"])
+
+            if not data:
+                continue
+
+
+            """
+                file = self.download_file(item["category"], \
+                    item["name"], item["type"], item["base_url"])
+
+                # Handles no internet error
+                if not file:
+                    continue
+
+                data = self.move_file("%s_%s_%s" % (item["category"], \
+                    item["name"], item["type"]), item["category"], tmp_location)
+
+            formatted_data = self.format_data(check_file)
+            """
     # Reads config and downloads stuff
     # Maybe try not working with files at all, use direct request feedback?
+    # Should be an external script
     def read_config(self):
         # FIX -- Remove ..
         cwd = os.getcwd()
@@ -213,24 +265,30 @@ class correlate_data(database_handler):
         # FIX
         # Make it only run in memory, no local save.
         tmp_location = "%s/tmp_data" % cwd
-        json_data = json.load(open(config, 'r'))
+        try:
+            json_data = json.load(open(config, 'r'))
+        except IOError:
+            config = "%s/../config/config.json" % cwd  
+            json_data = json.load(open(config, 'r'))
         
-        # Should use full paths.
-        # Maybe try not working with files at all, use direct request feedback?
-
-        # Lmao, this is garbage - Add timestamp checks
         for item in json_data:
-            if not os.path.isfile("%s/%s/%s" % (tmp_location, item["category"], \
-                "%s_%s_%s" % (item["category"], item["name"], item["type"]))):
+            check_file = "%s/%s/%s" % (tmp_location, item["category"], \
+                    "%s_%s_%s" % (item["category"], item["name"], item["type"]))
+
+            if not os.path.isfile(check_file):
 
                 file = self.download_file(item["category"], \
                     item["name"], item["type"], item["base_url"])
+
+                # Handles no internet error
+                if not file:
+                    continue
+
                 data = self.move_file("%s_%s_%s" % (item["category"], \
                     item["name"], item["type"]), item["category"], tmp_location)
 
-            formatted_data = self.format_data("%s/%s/%s" % (tmp_location, item["category"], \
-                ("%s_%s_%s" % (item["category"], item["name"], item["type"]))))
-            self.add_data_to_db(formatted_data, item["type"], item["category"], item["name"])
+            formatted_data = self.format_data(check_file)
+            self.add_data_to_db_new(formatted_data, item["type"], item["category"], item["name"])
 
     # Checks what the regex matches
     def regex_check(self, data):
@@ -249,8 +307,15 @@ if __name__ == "__main__":
     find_data = correlate_data("127.0.0.1", 27017)
     
     # Tests a single
-    #find_data.add_data_to_db(["192.168.0.1"], "ip", "phish", "phishtank")
-    #hello = find_data.database.return_collection(find_data.database.mongoclient.url.url)
+    """
+    db = find_data.database.mongoclient.ip
+    data_type = "ip"
+    item = ["185.28.100.99", "192.168.0.1"]
+    category = "testing"
+    name = "virustotal"
+    find_data.add_data_new(db, data_type, item, category, name)
+    for items in item:
+        print find_data.find_object_new(data_type, items)
+    """
 
-    # Generates all of config file
     find_data.read_config()
