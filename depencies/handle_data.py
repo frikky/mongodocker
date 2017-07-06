@@ -1,14 +1,17 @@
 import os 
 import re
 import json
+import time
 import requests
 from pymongo import MongoClient
 from mongodb import database_handler
+
 
 # Data handler for the flask server
 class correlate_data(database_handler):
     def __init__(self, ip, port):
         self.database = database_handler(ip, port)
+        self.timestampcheck = 12
 
     # Returns error messages
     def default_error(self, data="", path=""):
@@ -19,6 +22,7 @@ class correlate_data(database_handler):
 
     # Do mongodb searches and stuff. 
     # IP/URL/HASH > 
+    # This is garbage. Redo it all \o/
     def get_data(self, ip_db, url_db, hash_db, path, data):
         resp = ""
         cur_db = ""
@@ -80,39 +84,21 @@ class correlate_data(database_handler):
 
         return resp 
 
-    # Return filelocation
-    def download_file(self, category, name, type, download_location):
-        filename = "%s_%s_%s" % (category, name, type)
+    def download_file_new(self, category, name, type, download_location):
+        #filename = "%s_%s_%s" % (category, name, type)
         print "Downloading %s" % download_location
          
         # In case of no internet or stuff
         try:
             r = requests.get(download_location, stream=True, timeout=10)
-        except (requests.exceptions.SSLError, requests.exceptions.ReadTimeout):
+        except (
+            requests.exceptions.SSLError, 
+            requests.exceptions.ReadTimeout, 
+            requests.exceptions.ConnectionError
+        ):
             return False
 
-        with open(filename, 'wb') as tmp:
-            for chunk in r.iter_content(chunk_size=1024):
-                if chunk:
-                    tmp.write(chunk)
-
-        return filename
-
-    # Creates folder
-    def create_folder(self, path):
-        os.mkdir(path)
-
-    # Can deduce category from filename
-    # Moves file to appropriate location
-    def move_file(self, filename, category, location):
-        renamefile = "%s/%s/%s" % (location, category, filename)
-        try:
-            os.rename(filename, renamefile)
-        except OSError:
-            self.create_folder("%s/%s" % (location, category))
-            os.rename(filename, renamefile)
-
-        return True
+        return r.text
 
     # Hardcoded for IPs in Zeus
     ###### FIX!!! - Might make it a standard.
@@ -150,8 +136,6 @@ class correlate_data(database_handler):
         return False
 
     def verify_post_data(self, type, data, category, name):
-        # Raw or NA? If implemented in config? 
-
         # FIX
         # Make category global to reduce load for every request
         all_categories = [item for item in self.database.get_available_category_collections()]
@@ -159,15 +143,13 @@ class correlate_data(database_handler):
             {"error": "Category %s doesn't exist and is therefore not permitted." % category}
             return False
 
-        # Verify if format is a known one for data here. FIX
-        # e.g. virustotal format for hashes. 
-
-        # Add url
         verification = self.verify_ip(type, data)
         if not verification:
             return False
 
         # Add data after all checks have been done
+        ## FIX - check size of list. Can't handle too big requests
+        # If single IP, do lookup at the same time (thread)
         if isinstance(verification, list):
             for item in verification:
                 self.add_data_to_db(item, type, category, name)
@@ -176,10 +158,6 @@ class correlate_data(database_handler):
             self.add_data_to_db(item, type, category, name)
             return {"result": "1 %s added to the db." % type}
 
-
-        # Data (hash, ip, url), category, name
-        # Disallow creation of new categories
-        # print data, category, name
 
     # Adds a list of x to the correct db FIX
     # FIX -- Support kwargs or skip this step entirely
@@ -214,6 +192,24 @@ class correlate_data(database_handler):
             self.database.add_data(db, db[type], category_db, type, data, \
                 category=category, name=name)
 
+    # FIX - Format data properly
+    def format_data_new(self, data):
+        arr = []
+        for item in data.split("\n"):
+            if item.startswith("#") or len(item) < 2: 
+                continue
+           
+            # Only takes a plain list
+            arr.append(item)
+
+        return arr
+            
+        #return [x[:-1] for x in data.split("\n") if x and \
+        #    not x.startswith("#") and len(x) > 1]
+
+    # Handles modular data being used
+    # Seems to be a working demo PoC \o/
+    # FIX -- Test if the 12 hour timestamp works.
     def read_config_new(self):
         # FIX -- Remove ..
         cwd = os.getcwd()
@@ -229,63 +225,61 @@ class correlate_data(database_handler):
         # Write timestamp download timestamp back to config file
         # Format data the right way (make new format_data)
         # Push to add_data_to_db_new (or skip this step and straight to add data
-        
-        for item in json_data:
-            check_file = "%s/%s/%s" % (tmp_location, item["category"], \
-                    "%s_%s_%s" % (item["category"], item["name"], item["type"]))
 
-            data = self.download_file(item["category"], \
-                item["name"], item["type"], item["base_url"])
+        new_json_file = []
+
+        for item in json_data:
+            # Refresh if 12 hours ago
+            try:
+                if item["lastedited"] < (self.timestampcheck+43200):
+                    new_json_file.append(item)
+                    continue
+            except KeyError:
+                item["lastedited"] = 0
+                
+            # Downloads and returns the data available
+            data = self.download_file_new(item["category"], item["name"], item["type"], item["base_url"])
 
             if not data:
+                new_json_file.append(item)
                 continue
 
+            # DO STUFF HERE
+            formatted_data = self.format_data_new(data)
 
-            """
-                file = self.download_file(item["category"], \
-                    item["name"], item["type"], item["base_url"])
+            timestamp = int(time.time())
+            item["lastedited"] = timestamp
+            new_json_file.append(item)
 
-                # Handles no internet error
-                if not file:
-                    continue
+            # Now add the freaking data
+            self.add_data_to_db_new(formatted_data, item["type"], item["category"], item["name"])
 
-                data = self.move_file("%s_%s_%s" % (item["category"], \
-                    item["name"], item["type"]), item["category"], tmp_location)
+        print "WRITING BACK TO FILE"
+        with open(config, 'w+') as tmp:
+            json.dump(new_json_file, tmp, indent=4)
 
-            formatted_data = self.format_data(check_file)
-            """
     # Reads config and downloads stuff
-    # Maybe try not working with files at all, use direct request feedback?
-    # Should be an external script
+    # Keep this function for testing purposes. Check __name__ main at bottom
+    # (Based on no internet connection) 
     def read_config(self):
-        # FIX -- Remove ..
         cwd = os.getcwd()
         config = "%s/config/config.json" % cwd
 
         # FIX
         # Make it only run in memory, no local save.
         tmp_location = "%s/tmp_data" % cwd
+
+        # Verifies if it's ran as main or not
         try:
             json_data = json.load(open(config, 'r'))
         except IOError:
             config = "%s/../config/config.json" % cwd  
+            tmp_location = "%s/../tmp_data" % cwd
             json_data = json.load(open(config, 'r'))
         
         for item in json_data:
             check_file = "%s/%s/%s" % (tmp_location, item["category"], \
                     "%s_%s_%s" % (item["category"], item["name"], item["type"]))
-
-            if not os.path.isfile(check_file):
-
-                file = self.download_file(item["category"], \
-                    item["name"], item["type"], item["base_url"])
-
-                # Handles no internet error
-                if not file:
-                    continue
-
-                data = self.move_file("%s_%s_%s" % (item["category"], \
-                    item["name"], item["type"]), item["category"], tmp_location)
 
             formatted_data = self.format_data(check_file)
             self.add_data_to_db_new(formatted_data, item["type"], item["category"], item["name"])
@@ -314,8 +308,24 @@ if __name__ == "__main__":
     category = "testing"
     name = "virustotal"
     find_data.add_data_new(db, data_type, item, category, name)
-    for items in item:
-        print find_data.find_object_new(data_type, items)
     """
 
-    find_data.read_config()
+    ips = find_data.database.get_available_ip_collections()
+    biggestnumber = 0
+    biggest_name = 0
+
+    for item in ips:
+        count = find_data.database.mongoclient.ip[item].find({}).count()
+        if count > biggestnumber:
+            biggestnumber = count
+            biggest_name = item
+
+    for items in find_data.database.mongoclient.ip[biggest_name].find({}):
+        print items["ip"]
+        print
+
+
+    #find_data.read_config()
+    #find_data.read_config_new()
+    #for items in item:
+    #    print find_data.find_object_new(data_type, items)

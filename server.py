@@ -22,6 +22,8 @@ find_data = correlate_data(serverip, serverport)
 if not os.path.isdir("tmp_data/"):
     os.mkdir("tmp_data")
 
+server_ip = "localhost"
+
 # FIX - Top kek
 API_KEY = conf.API_KEY
 
@@ -72,23 +74,33 @@ def search():
             if request.headers["Referer"] in request.url:
                 return redirect(request.headers["Referer"], code=code)
             else:
-                return redirect("http://localhost", code=code)
+                return redirect(server_ip, code=code)
         except KeyError:
-            return redirect("http://localhost", code=code)
+            return redirect(server_ip, code=code)
 
-    regex_type = find_data.regex_check(data)
-    return_data = get_tasks(regex_type, data)
-    verification = verify_error(return_data.data)
+    # Finds IP, URL, hash etc
+    data_type = find_data.regex_check(data)
+    
+    # FIX - URL should always contain dots? Idk
+    if data_type == "url" and not "." in data:
+        # Might be error in redirect.
+        return redirect("http://%s" % server_ip, code=301)
 
-    # Should all this be moved to handle_data?
-    # FIX - Add error message to template (jinja)
-    # FIX - Blank search
-    if verification:
-        return return_data 
+    # server.py->handle_data->mongodb->function
+    return_data = find_data.database.find_object_new(data_type, data)
+    # FIX EXAMPLE SEARCHES (should be in db):
+    # 81.177.140.251
+    # 83.15.254.242
+    # 83.212.117.233
+    print return_data
+
+    #print "IS THERE DATA? %s" % return_data
+    if return_data == None:
+        return redirect("http://%s" % server_ip, code=301)
 
     # FIX - ADD ip and URL OSint \o/
     # FIX virustotal - hash shouldn't be in object creation
-    if regex_type == "hash":
+    if data_type == "hash":
         # Adds data before redirecting if file exists
         vt = virustotal(data)
         vt_data = vt.check_vt()
@@ -98,12 +110,14 @@ def search():
                 return redirect("https://virustotal.com/en/file/%s/analysis" % data.lower(), code=301)
         except KeyError:
             pass
+    else:
+        return jsonify(return_data)
 
     return render_template("index.html", code=404)
 
 def verify_error(data):
     try:
-        json.loads(data)["result"]["error"]
+        data["result"]["error"]
     except KeyError:
         return data
 
@@ -120,7 +134,7 @@ def search_manual(data):
     return render_template("index.html", code=404)
 
 
-# Verify if the host is part of the API subscribers 
+# API to add data to the DB with POST requests.
 @app.route('/', methods=['POST'])
 def add_task():
     try:
@@ -131,6 +145,7 @@ def add_task():
             except ValueError:
                 return jsonify({"error": "Invalid request."})
                 
+            # Not sure if static types are smart 
             accepted_types = ["ip", "url", "hash"]
             if data["type"] in accepted_types:
                 ret = find_data.verify_post_data(data["type"], \
@@ -151,7 +166,6 @@ def add_task():
         data = {"error": "Missing API key. Header: \"TOKEN\""}
         pass
 
-    #data = {"error": "Missing or wrong API key. Header: TOKEN"}
     return jsonify(data)
 
 # Lists all available categories
@@ -176,7 +190,7 @@ def clear_data():
 # Used for testing purposes
 @app.route('/generate', methods=['GET'])
 def generate_data():
-    find_data.read_config()
+    find_data.read_config_new()
     return jsonify({"Status": "Generated data. Check /categories"})
 
 @app.route('/<string:path>/<string:task>', methods=['GET'])
@@ -235,13 +249,14 @@ def apply_caching(response):
 
 if __name__ == '__main__':
     debug = True
+    server_ip = "localhost"
     try:
         if not int(argv[1]) == 443:
             debug = False
-            app.run(debug=debug, threaded=True, host="localhost", port=int(argv[1]))
+            app.run(debug=debug, threaded=True, host=server_ip, port=int(argv[1]))
         else:
             context = (conf.crt, conf.key)
             debug = False
-            app.run(debug=debug, ssl_context=context, threaded=True, host="localhost", port=int(argv[1]))
+            app.run(debug=debug, ssl_context=context, threaded=True, host=server_ip, port=int(argv[1]))
     except IndexError:
-        app.run(debug=debug, threaded=True, host="localhost", port=80)
+        app.run(debug=debug, threaded=True, host=server_ip, port=80)
