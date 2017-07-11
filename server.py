@@ -66,19 +66,12 @@ def standard():
 @app.route('/search', methods=['POST'])
 def search():
     data = request.form["search"]
+    print len(data)
         
-    # FIX error code and else statement
-    if not data or data == "\n" or data is None:
+    if not data or len(data) == 0 or data == "\n" or data is None:
         code = 301
-        try:
-            if request.headers["Referer"] in request.url:
-                return redirect(request.headers["Referer"], code=code)
-            else:
-                return redirect(server_ip, code=code)
-        except KeyError:
-            return redirect(server_ip, code=code)
+        return redirect("http://%s" % server_ip, code=code)
 
-    # Finds IP, URL, hash etc
     data_type = find_data.regex_check(data)
     
     # FIX - URL should always contain dots? Idk

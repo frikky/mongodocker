@@ -12,22 +12,9 @@ MongoDB and REST API to use as a Threat Intel framework for different SI(E)Ms. A
 # Config
 This is where the data is handled. Will add more data soon, and do some test runs of different categories etc. before locking it down. Run handle\_data.py to regenerate data from config file.
 
-# Local data storing
-For now, while testing, all the data collected from config/config.json is stored in tmp\_data.
-
-# Clearing the DB
-There are currently three ways that all work well:
-1. Restart docker container (It's not gonna run in docker soonish)
-2. Run "python mongodb.py clear"
-3. Start the webserver and go to localhost/clear
-
-All of these will clear the entire database. 
-
 # Adding data
-Currently there are plans for three different ways of adding data:
-* config file  	- cronjob for calling depencies/handle\_data.read\_config
-* external 		- posting to localhost/80 using a specific call. Supports bulk but not kwargs yet.
-* manual		- Using the function depencies/handle\_data.add\_data\_to\_db
+* config file - cronjob for calling depencies/handle\_data.read\_config
+* POST request - Use a API request
 
 # Done from todo
 * Add logic for IP, URL, hashes and categories 
@@ -39,22 +26,19 @@ Currently there are plans for three different ways of adding data:
 * A plain search site (GUI) 
 
 # Todo? 
-* Fix bottleneck for adding large amounts of data. 
+* Fix bottleneck for adding large amounts of data. __MIGHT__be fixed
+* Implement the API Security checking at https://github.com/shieldfy/API-Security-Checklist
 * Add logging
-* Add extensions management and script management for parsing of external sources. Most likely their own config files.
-* Better iterator to see if items already exist. Loop before > while. Will need to remake some functions. Might not be necessary as mongodb already checks. Same as first part of todo.
+* Add extensions management and script management for parsing of external sources. Made an attempt with Go and automated recognition of split location and data type
 
 *** When above is done
 * Filter what data to return (json > bson). (No object IDs)
 * Start using API tokens both in the database and the flask server. Not a rush as it's ran locally per now. (Done a stupid attempt with flask that doesn't work :)))))))
 * Try hosted solution - Proper config webserver and mongoDB setup required. See Security below.
-* More config-possibilites \o/ - More than the adding data chapter shows.
-* Finish up readme and stuff
 
 # Security
 Set HTTP(S) header 				 - refer to owasp
-Setup API authentication (flask) - Not sure how to implement it yet. Most likely static config file.
-Open specific ports in firewall. - IPTables config
+Setup API authentication (flask) - Not sure how to implement it yet. See Todo on API security (JWT)
 
 # Logic
 |client| -> webserver API -> mongoDB -> webserver -> |client|
@@ -62,7 +46,7 @@ Open specific ports in firewall. - IPTables config
 [GET]:
 e.g. IP 192.168.0.1 is categorized as a bot C&C:
 
-https://127.0.0.1:5000/ip/192.168.0.1
+https://127.0.0.1:5000/
 
         {
             "ip": "192.168.1.0",
@@ -79,12 +63,11 @@ https://127.0.0.1:5000/ip/192.168.0.1
 *** The above can also be done towards e.g. c2/ip or phishing/ip, depending what collections exist.
 
 [POST]:
-Add an IP (192.168.0.1 here) to the bot C&C db<br>
+Add data
 https://127.0.0.1:5000/ip/192.168.0.1<br>
 
 * Token defined in config/config.py
 headers={"auth": "TOKENHERE"}<br>
-data={"name": "zeus", "category": "c2", "type": "ip", "data": \<ip\>}<br>
+data={"name": "zeus", "category": "c2", "type": "ip", "data": ip/url/etc}<br>
 
 Data will then be added to \<ip\> and the c2 database under name zeus.
-Not sure about response yet.
