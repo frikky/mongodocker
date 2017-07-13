@@ -162,6 +162,7 @@ def add_task():
     return jsonify(data)
 
 # Lists all available categories
+"""
 @app.route('/categories', methods=['GET'])
 def get_categories():
     data = {"categories": []}
@@ -186,6 +187,7 @@ def generate_data():
     find_data.read_config_new()
     return jsonify({"Status": "Generated data. Check /categories"})
 
+"""
 @app.route('/<string:path>/<string:task>', methods=['GET'])
 def get_tasks(path, task):
     # ffs bootstrap

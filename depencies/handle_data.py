@@ -6,7 +6,6 @@ import requests
 from pymongo import MongoClient
 from mongodb import database_handler
 
-
 # Data handler for the flask server
 class correlate_data(database_handler):
     def __init__(self, ip, port):
@@ -26,7 +25,6 @@ class correlate_data(database_handler):
     def get_data(self, ip_db, url_db, hash_db, path, data):
         resp = ""
         cur_db = ""
-        #21BCD352F2B4D47C0C2A4FE640FCD9D551A039279E17F210E652D775A7525928
 
         # Add url and ip
         ### FIX
@@ -159,12 +157,6 @@ class correlate_data(database_handler):
             return {"result": "1 %s added to the db." % type}
 
 
-    # Adds a list of x to the correct db FIX
-    # FIX -- Support kwargs or skip this step entirely
-    def add_data_to_db_new(self, data, data_type, category, name):
-        db = self.database.mongoclient[data_type] 
-        self.database.add_data_new(db, data_type, data, category, name)
-
     # Add kwargs to be able to add url and stuff as well. Comment maybe?
     def add_data_to_db(self, data, type, category, name):
         if type == "ip":
@@ -185,9 +177,11 @@ class correlate_data(database_handler):
 
             ## FIX
             if cnt:
-                print "Added %d items to %s db with category %s." % (cnt, type, category)
+                print "Added %d items to %s db with category %s." % \
+                    (cnt, type, category)
             else:
-                print "Added nothing to db %s db with category %s." % (type, category)
+                print "Added nothing to db %s db with category %s." % \
+                    (type, category)
         else:
             self.database.add_data(db, db[type], category_db, type, data, \
                 category=category, name=name)
@@ -204,9 +198,6 @@ class correlate_data(database_handler):
 
         return arr
             
-        #return [x[:-1] for x in data.split("\n") if x and \
-        #    not x.startswith("#") and len(x) > 1]
-
     # Handles modular data being used
     # Seems to be a working demo PoC \o/
     # FIX -- Test if the 12 hour timestamp works.
@@ -238,7 +229,8 @@ class correlate_data(database_handler):
                 item["lastedited"] = 0
                 
             # Downloads and returns the data available
-            data = self.download_file_new(item["category"], item["name"], item["type"], item["base_url"])
+            data = self.download_file_new(item["category"], \
+                item["name"], item["type"], item["base_url"])
 
             if not data:
                 new_json_file.append(item)
@@ -252,7 +244,9 @@ class correlate_data(database_handler):
             new_json_file.append(item)
 
             # Now add the freaking data
-            self.add_data_to_db_new(formatted_data, item["type"], item["category"], item["name"])
+            db = self.database.mongoclient[data_type] 
+            self.database.add_data_new(db, item["type"], \
+                formatted_data, item["category"], item["name"])
 
         print "WRITING BACK TO FILE"
         with open(config, 'w+') as tmp:
