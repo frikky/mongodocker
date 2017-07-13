@@ -244,7 +244,7 @@ class correlate_data(database_handler):
             new_json_file.append(item)
 
             # Now add the freaking data
-            db = self.database.mongoclient[data_type] 
+            db = self.database.mongoclient[item["type"]] 
             self.database.add_data_new(db, item["type"], \
                 formatted_data, item["category"], item["name"])
 
